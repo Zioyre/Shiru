@@ -58,6 +58,8 @@
   export let files = []
   export let playableFiles = []
   export let updateCurrent
+  export let paused = true
+  export let miniplayerShelved = false
   $: updateFiles(files)
   let src = null
   let video = null
@@ -65,7 +67,6 @@
   let current = null
   let subs = null
   let duration = 0.1
-  let paused = true
   let muted = false
   let wasPaused = null
   let videos = []
@@ -1649,12 +1650,12 @@
     </div>
   </div>
   <div class='middle d-flex align-items-center justify-content-center flex-grow-1 position-relative'>
-    <div aria-hidden='true' class='w-full h-full position-absolute toggle-fullscreen' on:dblclick={toggleFullscreen} on:click|self={() => { if ($page === page.PLAYER && modal.length === 0) { playPause(); } else { page.navigateTo(page.PLAYER) } }} />
+    <div aria-hidden='true' class='w-full h-full position-absolute toggle-fullscreen' on:dblclick={toggleFullscreen} on:click|self={() => { if ($page === page.PLAYER && modal.length === 0) { playPause(); } else if (!miniplayerShelved) { page.navigateTo(page.PLAYER) } }} />
     <div aria-hidden='true' class='w-full h-full position-absolute toggle-immerse d-none' on:dblclick={toggleFullscreen} on:click|self={toggleImmerse} />
     <div class='w-full h-full position-absolute mobile-focus-target d-none' use:click={() => { page.navigateTo(page.PLAYER) }} />
     <span aria-hidden='true' class='icon ctrl align-items-center justify-content-end w-150 mw-full mr-auto' class:hidden={externalPlayback} class:mb-50={!miniplayer} on:click={rewind}><Rewind size='3rem' /></span>
     <!-- miniplayer buttons -->
-    {#if miniplayer}
+    {#if miniplayer && !miniplayerShelved}
       <span class='position-absolute rounded-10 top-0 right-0 m-10 btn-shadow button' class:ctrl={!SUPPORTS.isAndroid} class:mr-40={!SUPPORTS.isAndroid} class:mr-50={SUPPORTS.isAndroid} title='Minimize' data-name='playPause' use:click={() => (playPage.set(!playPage.value))}>
         <Minus size='1.9rem' strokeWidth='3'/>
       </span>
@@ -1662,35 +1663,37 @@
         <X size='1.9rem' strokeWidth='3'/>
       </span>
     {/if}
-    <div class='d-flex align-items-center position-relative' class:mb-50={!miniplayer} style='width: 100%;' title='Play/Pause'>
-      {#if hasLast}
-        <span class='icon ctrl position-absolute rounded-10 text-white' style={externalPlayback ? `left: 5%` : `left: 15%`} title='Last' data-name='playPause' use:click={playLast}>
-          <SkipBack size='3rem' fill='currentColor' />
-        </span>
-      {/if}
-        <span class='icon ctrl position-absolute rounded-10 text-white' data-name='playPause' style='left: 50%; margin-left: -3rem;' use:click={playPause}>
-          {#if ended}
-            <RotateCw size='3rem' />
-          {:else}
-            {#if paused}
-              <Play size='3rem' fill='currentColor' />
+    {#if !miniplayer || !miniplayerShelved}
+      <div class='d-flex align-items-center position-relative' class:mb-50={!miniplayer} style='width: 100%;' title='Play/Pause'>
+        {#if hasLast}
+          <span class='icon ctrl position-absolute rounded-10 text-white' style={externalPlayback ? `left: 5%` : `left: 15%`} title='Last' data-name='playPause' use:click={playLast}>
+            <SkipBack size='3rem' fill='currentColor' />
+          </span>
+        {/if}
+          <span class='icon ctrl position-absolute rounded-10 text-white' data-name='playPause' style='left: 50%; margin-left: -3rem;' use:click={playPause}>
+            {#if ended}
+              <RotateCw size='3rem' />
             {:else}
-              <Pause size='3rem' fill='currentColor' />
+              {#if paused}
+                <Play size='3rem' fill='currentColor' />
+              {:else}
+                <Pause size='3rem' fill='currentColor' />
+              {/if}
             {/if}
-          {/if}
-        </span>
-      {#if hasNext}
-        <span class='icon ctrl position-absolute rounded-10 text-white' style={externalPlayback ? `right: 5%` : `right: 15%`} title='Next' data-name='playPause' use:click={playNext}>
-          <SkipForward size='3rem' fill='currentColor' />
-        </span>
+          </span>
+        {#if hasNext}
+          <span class='icon ctrl position-absolute rounded-10 text-white' style={externalPlayback ? `right: 5%` : `right: 15%`} title='Next' data-name='playPause' use:click={playNext}>
+            <SkipForward size='3rem' fill='currentColor' />
+          </span>
+        {/if}
+      </div>
+      <span aria-hidden='true' class='icon ctrl align-items-center w-150 mw-full ml-auto' class:hidden={externalPlayback} class:mb-50={!miniplayer} on:click={forward}><FastForward size='3rem' /></span>
+      <div class='position-absolute bufferingDisplay' class:bufferingPos={SUPPORTS.isAndroid && !miniplayer}/>
+      {#if currentSkippable}
+        <button class='skip btn text-dark position-absolute bottom-0 right-0 mr-20 mb-5 font-weight-bold z-30 d-flex align-items-center justify-content-center' use:click={skip}>
+          <FastForward size='1.8rem' fill='currentColor' /><span class='ml-5'>Skip {currentSkippable}</span>
+        </button>
       {/if}
-    </div>
-    <span aria-hidden='true' class='icon ctrl align-items-center w-150 mw-full ml-auto' class:hidden={externalPlayback} class:mb-50={!miniplayer} on:click={forward}><FastForward size='3rem' /></span>
-    <div class='position-absolute bufferingDisplay' class:bufferingPos={SUPPORTS.isAndroid && !miniplayer}/>
-    {#if currentSkippable}
-      <button class='skip btn text-dark position-absolute bottom-0 right-0 mr-20 mb-5 font-weight-bold z-30 d-flex align-items-center justify-content-center' use:click={skip}>
-        <FastForward size='1.8rem' fill='currentColor' /><span class='ml-5'>Skip {currentSkippable}</span>
-      </button>
     {/if}
   </div>
   <div class='bottom d-flex z-40 flex-column px-20'>

@@ -157,9 +157,6 @@
 }
 
 @media (min-width: 993px) {
-  .ml-lg-280 {
-    margin-left: 28rem !important;
-  }
   .px-lg-30 {
     padding-left: 3rem !important;
     padding-right: 3rem !important;

@@ -527,6 +527,8 @@
   import PlayerPage from '@/routes/player/PlayerPage.svelte'
 
   export let miniplayer = false
+  export let miniplayerShelved = false
+  export let playbackPaused = true
 </script>
 
-<PlayerPage files={$processed} playableFiles={$processedFiles} {miniplayer} media={$nowPlaying} bind:playFile on:current={handleCurrent} {updateCurrent} on:duration={handleRanged} />
+<PlayerPage files={$processed} playableFiles={$processedFiles} {miniplayer} bind:paused={playbackPaused} bind:miniplayerShelved media={$nowPlaying} bind:playFile on:current={handleCurrent} {updateCurrent} on:duration={handleRanged} />

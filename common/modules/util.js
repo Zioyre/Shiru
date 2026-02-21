@@ -622,6 +622,7 @@ export const defaults = {
   extensionsNew: {},
   extensionSources: {},
   disableMiniplayer: false,
+  autoHideMiniplayer: true,
   enableExternal: false,
   playerPath: '',
   playerSeek: 2,

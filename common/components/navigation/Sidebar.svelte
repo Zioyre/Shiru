@@ -155,7 +155,4 @@
   .sidebar.animated:hover .sidebar-overlay {
     width: 63rem
   }
-  .br-10 {
-    border-right: .10rem var(--border-color-sp) solid !important;
-  }
 </style>

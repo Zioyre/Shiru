@@ -67,7 +67,10 @@
   $: if (!dragging) cache.setEntry(caches.GENERAL, 'posMiniplayer', position)
   $: minWidthRatio = $isSuperSmall ? 0.25 : 0.15
   $: shelveTabLeft = shelved ? shelveLeft : !!(position + draggingPos).match(/left/i)
-  $: if (active) idleShelve(playbackPaused, $settings.autoHideMiniplayer)
+  $: {
+    if (active) idleShelve(playbackPaused, $settings.autoHideMiniplayer)
+    else if (shelved) unshelve()
+  }
   $: paddingTop = (() => {
     if (!active || (!position.match(/top/i) && !draggingPos.match(/top/i))) return padding
     if ($page === page.SETTINGS && (!$modal || !modal.length)) return $isLg ? SUPPORTS.isAndroid ? padding : '4rem' : SUPPORTS.isAndroid ? '9rem' : '13rem'
@@ -398,6 +401,7 @@
   class:shelved-left={shelved && shelveLeft}
   class:shelved-right={shelved && !shelveLeft}
   class:miniplayer-border={!shelved}
+  class:player-page={$page === page.PLAYER}
   class:bouncing
   style:--left={left}
   style:--top={top}
@@ -513,20 +517,20 @@
   .active > .miniplayer-footer {
     display: block !important;
   }
-  .animate {
+  .miniplayer-container.animate:not(.player-page) {
     transition-duration: 0.5s;
     transition-property: top, left, transform;
     transition-timing-function: cubic-bezier(0.3, 1.5, 0.8, 1);
   }
-  .miniplayer-container:not(.shelved) {
+  .miniplayer-container:not(.shelved):not(.player-page) {
     transform: translateX(0);
     transition: transform 0.20s cubic-bezier(0.4, 0, 0.2, 1), top 0.5s cubic-bezier(0.3, 1.5, 0.8, 1), left 0.5s cubic-bezier(0.3, 1.5, 0.8, 1);
   }
-  .miniplayer-container.shelved-right {
+  .miniplayer-container.shelved-right:not(.player-page) {
     transform: translateX(calc(100% - 3px));
     transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .miniplayer-container.shelved-left {
+  .miniplayer-container.shelved-left:not(.player-page) {
     transform: translateX(calc(-100% - 4px));
     transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
   }

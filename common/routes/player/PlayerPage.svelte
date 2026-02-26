@@ -288,6 +288,9 @@
       }
       WPC.listen('externalReady', externalReadyListener)
     }
+    paused = true
+    currentTime = 0
+    targetTime = 0
     launchedExternal = launchExternal
     WPC.send('current', { current: file, external: settings.value.enableExternal || launchExternal })
   }

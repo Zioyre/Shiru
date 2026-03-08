@@ -705,7 +705,7 @@ body {
     min-height: 20rem;
 }
 
-.transparent {
+:not(.svelte-keybinds *).transparent {
   opacity: 0;
   pointer-events: none;
 }

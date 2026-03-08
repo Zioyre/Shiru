@@ -25,6 +25,9 @@ patchedDependencies:
   rfdc:
     hash: c9f93965feee0cc9f6da8f3451b078a567c0bb98da4f0c2f8b552e51a055789b
     path: patches/rfdc.patch
+  svelte-keybinds:
+    hash: f0c94591da45fd53ec510b56276e74597f95557fc91757f7ddc0f4a516ef90b9
+    path: patches/svelte-keybinds.patch
 
 importers:
 
@@ -217,7 +220,7 @@ importers:
         version: 4.4.2
       css-loader:
         specifier: ^7.1.4
-        version: 7.1.4(webpack@5.105.2)
+        version: 7.1.4(webpack@5.105.2(webpack-cli@6.0.1))
       dompurify:
         specifier: ^3.3.1
         version: 3.3.1
@@ -259,7 +262,7 @@ importers:
         version: 4.2.20
       svelte-keybinds:
         specifier: ^1.0.9
-        version: 1.0.9
+        version: 1.0.9(patch_hash=f0c94591da45fd53ec510b56276e74597f95557fc91757f7ddc0f4a516ef90b9)
       svelte-loader:
         specifier: ^3.2.4
         version: 3.2.4(svelte@4.2.20)
@@ -501,10 +504,6 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     peerDependencies:
       eslint: ^6.0.0 || ^7.0.0 || >=8.0.0
-
-  '@eslint-community/regexpp@4.12.1':
-    resolution: {integrity: sha512-CCZCDJuduB9OUkFkY2IgppNZMi2lBQgD2qzwXkEia16cge2pijY/aXi96CJMquDMn3nJdlPV1A5KrJEXwfLNzQ==}
-    engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
 
   '@eslint-community/regexpp@4.12.2':
     resolution: {integrity: sha512-EriSTlt5OC9/7SXkRSCAhfSxxoSUgBm33OH+IkwbdpgoqsSsUg7y3uh+IICI/Qg4BBWr3U2i39RpmycbxMq4ew==}
@@ -6184,8 +6183,6 @@ snapshots:
       eslint: 10.0.1
       eslint-visitor-keys: 3.4.3
 
-  '@eslint-community/regexpp@4.12.1': {}
-
   '@eslint-community/regexpp@4.12.2': {}
 
   '@eslint/config-array@0.23.2':
@@ -7188,11 +7185,6 @@ snapshots:
   acorn-import-phases@1.0.4(acorn@8.15.0):
     dependencies:
       acorn: 8.15.0
-
-  acorn-import-phases@1.0.4(acorn@8.16.0):
-    dependencies:
-      acorn: 8.16.0
-    optional: true
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:
@@ -8309,7 +8301,7 @@ snapshots:
 
   crypto-random-string@2.0.0: {}
 
-  css-loader@7.1.4(webpack@5.105.2):
+  css-loader@7.1.4(webpack@5.105.2(webpack-cli@6.0.1)):
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.6)
       postcss: 8.5.6
@@ -8320,7 +8312,7 @@ snapshots:
       postcss-value-parser: 4.2.0
       semver: 7.7.4
     optionalDependencies:
-      webpack: 5.105.2
+      webpack: 5.105.2(webpack-cli@6.0.1)
 
   css-select@4.3.0:
     dependencies:
@@ -8828,7 +8820,7 @@ snapshots:
   eslint-plugin-es-x@7.8.0(eslint@10.0.1):
     dependencies:
       '@eslint-community/eslint-utils': 4.9.0(eslint@10.0.1)
-      '@eslint-community/regexpp': 4.12.1
+      '@eslint-community/regexpp': 4.12.2
       eslint: 10.0.1
       eslint-compat-utils: 0.5.1(eslint@10.0.1)
 
@@ -11612,7 +11604,7 @@ snapshots:
     dependencies:
       svelte: 4.2.20
 
-  svelte-keybinds@1.0.9: {}
+  svelte-keybinds@1.0.9(patch_hash=f0c94591da45fd53ec510b56276e74597f95557fc91757f7ddc0f4a516ef90b9): {}
 
   svelte-loader@3.2.4(svelte@4.2.20):
     dependencies:
@@ -11709,16 +11701,6 @@ snapshots:
       serialize-javascript: 6.0.2
       terser: 5.43.1
       webpack: 5.105.2(webpack-cli@6.0.1)
-
-  terser-webpack-plugin@5.3.16(webpack@5.105.2):
-    dependencies:
-      '@jridgewell/trace-mapping': 0.3.25
-      jest-worker: 27.5.1
-      schema-utils: 4.3.3
-      serialize-javascript: 6.0.2
-      terser: 5.43.1
-      webpack: 5.105.2
-    optional: true
 
   terser@5.43.1:
     dependencies:
@@ -12134,39 +12116,6 @@ snapshots:
       wildcard: 2.0.1
 
   webpack-sources@3.3.3: {}
-
-  webpack@5.105.2:
-    dependencies:
-      '@types/eslint-scope': 3.7.7
-      '@types/estree': 1.0.8
-      '@types/json-schema': 7.0.15
-      '@webassemblyjs/ast': 1.14.1
-      '@webassemblyjs/wasm-edit': 1.14.1
-      '@webassemblyjs/wasm-parser': 1.14.1
-      acorn: 8.16.0
-      acorn-import-phases: 1.0.4(acorn@8.16.0)
-      browserslist: 4.28.1
-      chrome-trace-event: 1.0.4
-      enhanced-resolve: 5.19.0
-      es-module-lexer: 2.0.0
-      eslint-scope: 5.1.1
-      events: 3.3.0
-      glob-to-regexp: 0.4.1
-      graceful-fs: 4.2.11
-      json-parse-even-better-errors: 2.3.1
-      loader-runner: 4.3.1
-      mime-types: 2.1.35
-      neo-async: 2.6.2
-      schema-utils: 4.3.3
-      tapable: 2.3.0
-      terser-webpack-plugin: 5.3.16(webpack@5.105.2)
-      watchpack: 2.5.1
-      webpack-sources: 3.3.3
-    transitivePeerDependencies:
-      - '@swc/core'
-      - esbuild
-      - uglify-js
-    optional: true
 
   webpack@5.105.2(webpack-cli@6.0.1):
     dependencies:

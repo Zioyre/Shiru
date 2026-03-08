@@ -1511,7 +1511,7 @@
   on:keydown={resetImmerse}
   on:mouseleave={immersePlayer}>
   {#if showKeybinds && !miniplayer}
-    <div class='position-absolute bg-tp w-full h-full z-50 font-size-12 p-20 d-flex align-items-center justify-content-center pointer' on:pointerup|self={() => (showKeybinds = false)} tabindex='-1' role='button'>
+    <div class='position-absolute bg-tp w-full h-full z-10 font-size-12 p-20 d-flex align-items-center justify-content-center' on:pointerup|self={() => (showKeybinds = false)} tabindex='-1' role='button'>
       <Keybinds let:prop={item} autosave={true} clickable={true}>
         {#if item?.type}
           <div class='bind icon' title={item?.desc} style='pointer-events: all !important;'>

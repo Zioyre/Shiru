@@ -561,8 +561,9 @@
   function handleWheel(event) {
     const onPlayerPage = $page === page.PLAYER
     const onDropdown = event.target?.closest('.dropdown') // checks for dropdowns like subtitles or audio tracks as they can be scrollable.
+    const onOverflow = event.target?.closest('.overflow-auto') || event.target?.closest('.overflow-y-auto') || event.target?.closest('.overflow-y-scroll') // checks for potentially scrollable containers
     const hasFileModal = modal.exists(modal.FILE_MANAGER) || modal.exists(modal.FILE_EDITOR)
-    if (onPlayerPage ? hasFileModal || onDropdown || (modal.length && miniplayerShelved) : !miniplayer || miniplayerShelved) return
+    if (onPlayerPage ? hasFileModal || onDropdown || onOverflow || (modal.length && miniplayerShelved) : !miniplayer || miniplayerShelved) return
     event.preventDefault()
     // make trackpad type device scroll more gradual
     wheelAccumulator += event.deltaY

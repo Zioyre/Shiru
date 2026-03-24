@@ -100,11 +100,11 @@
   $: if (preview) clearTimeout(focusTimeout)
 </script>
 
-<div bind:this={container} class='d-flex p-md-20 p-15 position-relative small-card-ct {$reactive ? `` : `not-reactive`}' use:hoverClick={[viewMedia, setHoverState, viewMedia]} on:focus={handleFocus}>
+<div bind:this={container} class='d-flex px-md-20 px-sm-10 px-5 py-20 position-relative small-card-ct' class:not-reactive={!$reactive} use:hoverClick={[viewMedia, setHoverState, viewMedia]} on:focus={handleFocus}>
   {#if preview}
     <PreviewCard {media} {type} {_variables} bind:element={previewCard}/>
   {/if}
-  <div class='item load-in small-card d-flex flex-column pointer {airingInfo?.episode.match(/out for/i) ? `airing` : ``}'>
+  <div class='item load-in small-card d-flex flex-column pointer' class:airing={airingInfo?.episode.match(/out for/i)}>
     {#if airingInfo}
       <div class='w-full text-center pb-10'>
         {airingInfo.episode}&nbsp;

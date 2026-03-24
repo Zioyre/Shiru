@@ -146,7 +146,7 @@
 
 <div bind:this={container} class='bg-dark h-full w-full overflow-y-scroll d-flex flex-wrap flex-row root overflow-x-hidden justify-content-center align-content-start' class:mt-safe-area={!$search.fileEdit && !$status.match(/offline/i)} class:bg-very-dark={$search.fileEdit} on:scroll={handleScroll} on:resize={resizeRows}>
   <SearchBar bind:search={$search} clearNow={$clearNow} on:input={update} />
-  <div class='w-full d-grid d-md-flex flex-wrap flex-row px-40 justify-content-center align-content-start pt-10'>
+  <div class='w-full d-grid d-md-flex flex-wrap flex-row px-20 px-md-40 justify-content-center align-content-start pt-10'>
     {#key $key}
       {#each $items as card}
         <Card {card} variables={{...$search}} />
@@ -162,8 +162,11 @@
   .d-grid:has(.item.small-card) {
     grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)) !important;
   }
+  .d-grid:has(.card.full-card) :global(.full-card) {
+    width: min(52rem, 95vw) !important;
+  }
   .d-grid:has(.card.full-card) {
-    grid-template-columns: repeat(auto-fill, minmax(52rem, 1fr)) !important;
+    grid-template-columns: repeat(auto-fill, minmax(min(52rem, 95vw), 1fr)) !important;
   }
   .d-grid {
     grid-template-columns: repeat(auto-fill, minmax(36rem, 1fr));
@@ -180,6 +183,14 @@
   @media (min-width: 769px) {
     .d-grid :global(.item.small-card) {
       width: 19rem !important;
+    }
+  }
+  @media (max-width: 768px) {
+    .d-grid :global(.small-card-ct) {
+      container-type: inline-size;
+    }
+    .d-grid :global(.small-card-ct .absolute-container) {
+      width: min(35rem, 175cqi) !important;
     }
   }
 </style>

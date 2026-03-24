@@ -12,6 +12,7 @@
   import { search } from '@/modules/sections.js'
   import { click, dragScroll } from '@/modules/click.js'
   import { SUPPORTS } from '@/modules/support.js'
+  import { settings } from '@/modules/settings.js'
   import { onDestroy, afterUpdate } from 'svelte'
   import { ChevronLeft, ChevronRight } from 'lucide-svelte'
 
@@ -103,7 +104,7 @@
   <div class='pr-5 pl-5 ml-10 font-size-12 glow text-muted pointer btn d-none align-items-center justify-content-center' class:d-flex={!SUPPORTS.isAndroid} aria-hidden='true' use:click={() => scrollCarousel('right')}><ChevronRight strokeWidth='3' size='2rem' /></div>
 </span>
 <div class='position-relative' class:isRSS={opts.isRSS}>
-  <div class='pb-10 w-full d-flex flex-row justify-content-start gallery' use:dragScroll bind:this={scrollContainer}>
+  <div class='pb-10 w-full d-flex flex-row justify-content-start gallery {!opts.isRSS ? `pl-15 pl-sm-10 pl-md-0` : ``}' class:pt-10={!opts.isRSS && $settings.cards === `full`} use:dragScroll bind:this={scrollContainer}>
     {#each ($preview || fakecards).slice(0, visibleLength || previewLength) as card}
       <Card {card} variables={{...opts.variables, section: true}} />
     {/each}

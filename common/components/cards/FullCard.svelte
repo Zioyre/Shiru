@@ -33,8 +33,8 @@
   onDestroy(() => clearTimeout(airingInterval))
 </script>
 
-<div class='d-flex px-md-20 py-10 position-relative justify-content-center full-card-ct' use:click={viewMedia}>
-  <div class='card load-in m-0 p-0 pointer full-card {airingInfo?.episode.match(/out for/i) ? `airing` : ``}' style:--color={media.coverImage.color || 'var(--tertiary-color)'}>
+<div class='d-flex px-md-20 px-sm-10 px-5 py-10 position-relative justify-content-center full-card-ct' use:click={viewMedia}>
+  <div class='card load-in m-0 p-0 pointer full-card rounded overflow-hidden' class:airing={airingInfo?.episode.match(/out for/i)} style:--color={media.coverImage.color || 'var(--tertiary-color)'}>
     <div class='row h-full'>
       <div class='img-col d-inline-block position-relative col-3 col-md-4'>
         <span class='airing-badge rounded-10 font-weight-semi-bold text-light bg-success' class:d-none={!airingInfo?.episode?.match(/out for/i)}>AIRING</span>
@@ -161,9 +161,9 @@
     margin-bottom: .1rem;
   }
   .card {
-    width: 52rem !important;
+    width: min(52rem, 88vw) !important;
     height: 27rem !important;
-    box-shadow: hsla(var(--dark-color-very-light-hsl), 0.3) 0px 7px 15px, hsla(var(--dark-color-very-light-hsl), 0.05) 0px 4px 4px;
+    box-shadow: hsla(var(--dark-color-very-light-hsl), 0.3) 0 7px 15px, hsla(var(--dark-color-very-light-hsl), 0.05) 0 4px 4px;
     contain-intrinsic-height: 27rem;
     transition: transform 0.2s ease;
   }

@@ -36,7 +36,7 @@
 {:else} <!-- type === 'small'  -->
 
   {#await card.data}
-    <SmallCardSk />
+    <SmallCardSk {variables} />
   {:then data}
     {#if data}
       <SmallCard {data} {variables} />

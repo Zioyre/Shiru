@@ -167,6 +167,9 @@
 .h-3 {
   height: 3rem !important;
 }
+.h-15 {
+  height: 1.5rem;
+}
 .h-20 {
   height: 2rem !important;
 }
@@ -599,6 +602,9 @@ a[href]:active, button:not([disabled], .not-reactive):active:not([data-sonner-to
 
 .pb-1 {
   padding-bottom: .1rem !important;
+}
+.pb-13 {
+  padding-bottom: 1.3rem !important;
 }
 
 .mt-safe-area {

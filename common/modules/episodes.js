@@ -1,6 +1,6 @@
 import { cache, caches } from '@/modules/cache.js'
 import { getKitsuMappings } from '@/modules/anime/anime.js'
-import { codes, getRandomInt, sleep } from '@/modules/util.js'
+import { codes, getRandomInt, sleep, isValidNumber } from '@/modules/util.js'
 import { printError, status, isOffline } from '@/modules/networking.js'
 import Bottleneck from 'bottleneck'
 import Debug from 'debug'
@@ -87,7 +87,9 @@ class Episodes {
     }
 
     handleArray(episodes, fileName) {
-        const episodeParts = (Array.isArray(episodes) && episodes) || (fileName?.match(/(?<!Part\s)(?<!Cour\s)\b\d+\s*[-~]\s*\d+\b/i)?.map(n => +n.trim())) || (typeof episodes === 'string' && episodes.match(/^\d+\s*~\s*\d+$/) && episodes.split(/~\s*/).map(n => +n.trim()))
+        const episodeArray  = (Array.isArray(episodes) && episodes?.length && episodes)
+        const fileMatch = !episodeArray && fileName?.match(/(?<!Part\s)(?<!Cour\s)\b(\d+)\s*[-~]\s*(\d+)\b/i)?.slice(1)?.map(n => +n.trim())?.filter(n => isValidNumber(n))
+        const episodeParts = episodeArray || (typeof episodes === 'string' && episodes.match(/^\d+\s*~\s*\d+$/) && episodes.split(/~\s*/)?.map(n => +n.trim())?.filter(n => isValidNumber(n))) || (fileMatch?.length && fileMatch)
         if (episodeParts?.length && ((Number(episodeParts[0]) || episodeParts[0]) < (Number(episodeParts[1]) || episodeParts[1]))) return { first: (Number(episodeParts[0]) || episodeParts[0]), last: (Number(episodeParts[1]) || episodeParts[1]) }
         return null
     }

@@ -1,5 +1,4 @@
 const commonConfig = require('common/webpack.config.cjs')
-const { merge } = require('webpack-merge')
 const { join, resolve } = require('path')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 
@@ -9,6 +8,7 @@ const alias = {
   '@/modules/support.js': join(__dirname, 'src', 'main', 'support.js'),
   '@': resolve(__dirname, '..', 'common')
 }
+const common = commonConfig(__dirname, alias, 'browser', 'index')
 
 /** @type {import('webpack').Configuration} */
 const capacitorConfig = {
@@ -44,8 +44,14 @@ const capacitorConfig = {
       writeToDisk: true
     },
     hot: true,
+    compress: true,
+    liveReload: false,
     client: {
-      overlay: { errors: true, warnings: false, runtimeErrors: false }
+      overlay: {
+        errors: true,
+        warnings: false,
+        runtimeErrors: false
+      }
     },
     port: 5001
   },
@@ -58,4 +64,10 @@ const capacitorConfig = {
   ]
 }
 
-module.exports = [capacitorConfig, merge({ entry: [join(__dirname, 'src', 'main', 'main.js')] }, commonConfig(__dirname, alias, 'browser', 'index'))]
+module.exports = [
+  capacitorConfig,
+  {
+    ...common,
+    entry: [join(__dirname, 'src', 'main', 'main.js'), ...(Array.isArray(common.entry) ? common.entry : [common.entry].filter(Boolean))]
+  }
+]

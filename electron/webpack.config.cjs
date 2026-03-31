@@ -43,9 +43,16 @@ module.exports = [
         writeToDisk: true
       },
       hot: true,
+      compress: true,
+      liveReload: false,
       client: {
-        overlay: { errors: true, warnings: false, runtimeErrors: false }
+        overlay: {
+          errors: true,
+          warnings: false,
+          runtimeErrors: false
+        }
       },
+      host: 'localhost',
       port: 5000
     }
   },

@@ -122,12 +122,14 @@
     <label for='player-autoplay'>{settings.playerAutoplay ? 'On' : 'Off'}</label>
   </div>
 </SettingCard>
-<SettingCard title='Pause On Lost Focus' description='Pauses/Resumes video playback when tabbing in/out of the app.'>
-  <div class='custom-switch fit-content'>
-    <input type='checkbox' id='player-pause' bind:checked={settings.playerPause} />
-    <label for='player-pause'>{settings.playerPause ? 'On' : 'Off'}</label>
-  </div>
-</SettingCard>
+{#if !SUPPORTS.isAndroid}
+  <SettingCard title='Pause On Lost Focus' description='Pauses/Resumes video playback when tabbing in/out of the app.'>
+    <div class='custom-switch fit-content'>
+      <input type='checkbox' id='player-pause' bind:checked={settings.playerPause} />
+      <label for='player-pause'>{settings.playerPause ? 'On' : 'Off'}</label>
+    </div>
+  </SettingCard>
+{/if}
 <SettingCard title='Auto-Complete Episodes' description='Automatically marks episodes as complete on AniList or MyAnimeList when you finish watching them. You must be logged in.'>
   <div class='custom-switch fit-content'>
     <input type='checkbox' id='player-autocomplete' bind:checked={settings.playerAutocomplete} />

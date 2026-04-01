@@ -442,20 +442,20 @@
           {/if}
           <div class='text-light d-flex align-items-center text-nowrap'>{since(new Date(result.date))}</div>
         </div>
-        <div class='secondary-metadata d-flex flex-wrap ml-auto justify-content-end'>
+        <div class='secondary-metadata d-flex flex-wrap ml-auto justify-content-end gap-5'>
           {#if result.type === 'best'}
-            <div class='rounded px-15 py-5 border text-nowrap font-weight-bold d-flex align-items-center' style='background: var(--success-color-very-dim); border-color: var(--success-color-light) !important; color: var(--success-color-light); margin-top: 0.15rem'>
+            <div class='rounded px-15 py-5 border text-nowrap font-weight-bold d-flex align-items-center' style='background: var(--success-color-very-dim); border-color: var(--success-color-light) !important; color: var(--success-color-light)'>
               Best Release
             </div>
           {:else if result.type === 'alt'}
-            <div class='rounded px-15 py-5 border text-nowrap font-weight-bold d-flex align-items-center' style='background: var(--danger-color-very-dim); border-color: var(--danger-color) !important; color: var(--danger-color); margin-top: 0.15rem'>
+            <div class='rounded px-15 py-5 border text-nowrap font-weight-bold d-flex align-items-center' style='background: var(--danger-color-very-dim); border-color: var(--danger-color) !important; color: var(--danger-color)'>
               Alt Release
             </div>
           {/if}
           {#await sanitiseTerms({ media, episode }, result.parseObject) then termObjects}
             {@const terms = termObjects?.map(term => term.term).filter((term, index, self) => index === self.findLastIndex(_term => _term.text === term.text))}
             {#each terms as term, index}
-              <div class='rounded px-15 py-5 bg-very-dark text-nowrap text-white d-flex align-items-center' class:ml-10={index !== 0 || result.type === 'best' || result.type === 'alt'} style='margin-top: 0.15rem;'>
+              <div class='rounded px-15 py-5 bg-very-dark text-nowrap text-white d-flex align-items-center'>
                 {term.text}
               </div>
             {/each}

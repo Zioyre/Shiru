@@ -132,6 +132,12 @@
     </div>
   </SettingCard>
 {/if}
+<SettingCard title='Offline Sync' description='When enabled, any changes made to your list while offline will be automatically synced to your profile when you reconnect. Disable this if you only want changes to be synced when you have an active connection.'>
+  <div class='custom-switch fit-content'>
+    <input type='checkbox' id='offline-sync' bind:checked={settings.offlineSync} />
+    <label for='offline-sync'>{settings.offlineSync ? 'On' : 'Off'}</label>
+  </div>
+</SettingCard>
 <SettingCard title='Query Complexity' description="Complex queries result in slower loading times but help in reducing the chances of hitting AniList's rate limit. Simple queries split up the requests into multiple queries which are requested as needed.">
   <div>
     <select class='form-control bg-dark mw-180 w-180 text-truncate' bind:value={settings.queryComplexity}>

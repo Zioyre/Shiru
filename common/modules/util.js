@@ -624,6 +624,7 @@ export const defaults = {
   hideMyAnime: false,
   toasts: 'All',
   closeAction: 'Prompt',
+  offlineSync: true,
   queryComplexity: 'Complex',
   expandingSidebar: false,
   torrentPathNew: undefined,
@@ -666,6 +667,8 @@ export const defaults = {
  * @property {string} posMiniplayer
  * @property {string} widthMiniplayer
  * @property {Array<any>} sync
+ * @property {Array<any>} syncQueueAni
+ * @property {Array<any>} syncQueueMal
  * @property {typeof defaults} settings
  * @property {any} [loadedTorrent]
  * @property {any} [stagingTorrents]
@@ -678,6 +681,8 @@ export const generalDefaults = {
   posMiniplayer: 'bottom right',
   widthMiniplayer: '0px',
   sync: [],
+  syncQueueAni: [],
+  syncQueueMal: [],
   settings: defaults,
   loadedTorrent: undefined,
   stagingTorrents: [],

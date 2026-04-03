@@ -1,10 +1,11 @@
 import { writable } from 'simple-store-svelte'
 import Bottleneck from 'bottleneck'
 
-import { malToken, refreshMalToken } from '@/modules/settings.js'
+import { malToken, refreshMalToken, settings } from '@/modules/settings.js'
 import { mediaCache } from '@/modules/cache.js'
-import { sleep } from '@/modules/util.js'
-import { printError } from '@/modules/networking.js'
+import { sleep, uniqueStore } from '@/modules/util.js'
+import { printError, status } from '@/modules/networking.js'
+import { MutationQueue } from '@/modules/mutationqueue.js'
 import Helper from '@/modules/helper.js'
 import Debug from 'debug'
 const debug = Debug('ui:myanimelist')
@@ -40,15 +41,17 @@ class MALClient {
   limiter = new Bottleneck({
     reservoir: 20,
     reservoirRefreshAmount: 20,
-    reservoirRefreshInterval: 4 * 1000,
+    reservoirRefreshInterval: 4 * 1_000,
     maxConcurrent: 2,
-    minTime: 1000
+    minTime: 1_000
   })
 
   rateLimitPromise = null
 
   /** @type {import('simple-store-svelte').Writable<ReturnType<MALClient['getUserLists']>>} */
   userLists = writable()
+
+  mutationQueue = new MutationQueue('syncQueueMal', !!malToken)
 
   userID = malToken
 
@@ -60,10 +63,10 @@ class MALClient {
       if (error.status === 500) return 1
 
       if (!error.statusText) {
-        if (!this.rateLimitPromise) this.rateLimitPromise = sleep(5 * 1000).then(() => { this.rateLimitPromise = null })
-        return 5 * 1000
+        if (!this.rateLimitPromise) this.rateLimitPromise = sleep(5 * 1_000).then(() => { this.rateLimitPromise = null })
+        return 5 * 1_000
       }
-      const time = ((error.headers.get('retry-after') || 5) + 1) * 1000
+      const time = ((error.headers.get('retry-after') || 5) + 1) * 1_000
       if (!this.rateLimitPromise) this.rateLimitPromise = sleep(time).then(() => { this.rateLimitPromise = null })
       return time
     })
@@ -72,9 +75,25 @@ class MALClient {
       this.userLists.value = this.getUserLists({ sort: 'list_updated_at' })
       //  update userLists every 15 mins
       setInterval(async () => {
-        const updatedLists = await this.getUserLists({ sort: 'list_updated_at' })
-        this.userLists.value = Promise.resolve(updatedLists) // no need to have userLists await the entire query process while we already have previous values, (it's awful to wait 15+ seconds for the query to succeed with large lists)
-      }, 1000 * 60 * 15)
+        this.getUserLists({ sort: 'list_updated_at' }).then(updatedLists => {
+          this.userLists.value = Promise.resolve(updatedLists) // no need to have userLists await the entire query process while we already have previous values, (it's awful to wait 15+ seconds for the query to succeed with large lists)
+        }).catch(error => debug('Failed to update user lists at the scheduled interval, this is likely a temporary connection issue:', error))
+      }, 1_000 * 60 * 15)
+      // update userLists and flush queued offline mutations when back online
+      uniqueStore(status).subscribe(value => {
+        if (value !== 'online') return
+        debug(`Back online${this.mutationQueue.hasPending ? ' with pending mutations' : ''}, refreshing user lists`)
+        this.getUserLists({ sort: 'list_updated_at' }).then(updatedLists => {
+          this.userLists.value = Promise.resolve(updatedLists)
+          if (this.mutationQueue.hasPending) this.#flushMutationQueue()
+        }).catch(error => debug('Failed to refresh user lists after coming online:', error))
+      })
+    } else {
+      uniqueStore(status).subscribe(value => {
+        if (value !== 'online' || !this.mutationQueue.hasPending) return
+        debug('Back online with pending mutations, flushing mutation queue...')
+        this.#flushMutationQueue()
+      })
     }
   }
 
@@ -110,7 +129,7 @@ class MALClient {
     let res = {}
     if (!query.eToken && (this.failedRefresh.includes(query.token ? query.token : this.userID.token) || (!query.token && this.userID.reauth))) return {}
     try {
-      if (!query.eToken && (Math.floor(Date.now() / 1000) >= ((query.token ? query.refresh_in : this.userID.refresh_in) || 0))) {
+      if (!query.eToken && (Math.floor(Date.now() / 1_000) >= ((query.token ? query.refresh_in : this.userID.refresh_in) || 0))) {
         const oauth = await this.refreshToken(query)
         if (oauth) {
           options.headers = {
@@ -187,7 +206,7 @@ class MALClient {
   /** @returns {Promise<import('./mal').Query<{ MediaList: import('./mal').MediaList }>>} */
   async getUserLists (variables) {
     debug('Getting user lists')
-    const limit = 1000 // max possible you can fetch
+    const limit = 1_000 // max possible you can fetch
     let offset = 0
     let allMediaList = []
     let hasNextPage = true
@@ -229,7 +248,7 @@ class MALClient {
           if ((item.node.num_episodes ?? 0) === 0) return -watched
           const distance = (item.node.num_episodes ?? 0) - watched
           if (distance <= 0) return -Infinity - watched
-          return distance + watched / 100000
+          return distance + watched / 100_000
         }
         return getSortValue(a) - getSortValue(b)
       })
@@ -256,6 +275,7 @@ class MALClient {
 
   async entry (variables) {
     debug(`Updating entry for ${variables.idMal}`)
+
     const query = {
       type: 'PUT',
       path: `anime/${variables.idMal}/my_list_status`,
@@ -281,11 +301,8 @@ class MALClient {
     }
     if (start_date) updateData.start_date = start_date
     if (finish_date) updateData.finish_date = finish_date
-    const res = await this.malRequest(query, updateData)
-    setTimeout(async () => {
-      if (!variables.token) this.userLists.value = Promise.resolve(await this.getUserLists({ sort: 'list_updated_at' })) // awaits before setting the value as it is super jarring to have stuff constantly re-rendering when it's not needed.
-    })
-    return res ? {
+
+    const entryData = {
       data: {
         SaveMediaListEntry: {
           id: variables.id,
@@ -298,11 +315,28 @@ class MALClient {
           customLists: []
         }
       }
-    } : res
+    }
+    if (status.value.match(/offline/i) && settings.value.offlineSync) {
+      debug(`We are offline and offline syncing is enabled, queuing entry update for media ${variables.idMal}`)
+      this.mutationQueue.enqueue('entry', variables.idMal, variables, null, this.mutationQueue.getProgressBefore(variables.idMal) ?? variables.episode ?? null, false)
+      return entryData
+    }
+    const res = await this.malRequest(query, updateData)
+    setTimeout(async () => {
+      if (!variables.token) this.userLists.value = Promise.resolve(await this.getUserLists({ sort: 'list_updated_at' })) // awaits before setting the value as it is super jarring to have stuff constantly re-rendering when it's not needed.
+    }).unref?.()
+    return res ? entryData : res
   }
 
   async delete (variables) {
     debug(`Deleting entry for ${variables.idMal}`)
+
+    if (status.value.match(/offline/i) && settings.value.offlineSync) {
+      debug(`We are offline and offline syncing is enabled, queuing entry deletion for media ${variables.idMal}`)
+      this.mutationQueue.enqueue('delete', variables.idMal, variables, null, null, false)
+      return []
+    }
+
     const query = {
       type: 'DELETE',
       path: `anime/${variables.idMal}/my_list_status`,
@@ -311,9 +345,25 @@ class MALClient {
     }
     const res = await this.malRequest(query)
     setTimeout(async () => {
-      if (!variables.token) this.userLists.value = Promise.resolve(await this.getUserLists({sort: 'list_updated_at'})) // awaits before setting the value as it is super jarring to have stuff constantly re-rendering when it's not needed.
-    })
+      if (!variables.token) this.userLists.value = Promise.resolve(await this.getUserLists({ sort: 'list_updated_at' })) // awaits before setting the value as it is super jarring to have stuff constantly re-rendering when it's not needed.
+    }).unref?.()
     return res
+  }
+
+  /**
+   * Flush offline mutations against the current userlist for validation.
+   * MAL has no isFetchingList race condition so there are never any executed mutations to re-apply, only offline ones to execute.
+   */
+  async #flushMutationQueue() {
+    const lists = (await this.userLists.value)?.data?.MediaList ?? null
+    await this.mutationQueue.flush(
+      lists,
+      async () => {}, // no executed mutations for MAL
+      async (mutation) => {
+        if (mutation.type === 'entry') await this.entry(mutation.variables)
+        else if (mutation.type === 'delete') await this.delete(mutation.variables)
+      }
+    )
   }
 }
 

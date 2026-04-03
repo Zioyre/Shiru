@@ -5,9 +5,10 @@ import Bottleneck from 'bottleneck'
 import { alToken, settings } from '@/modules/settings.js'
 import { malDubs } from '@/modules/anime/animedubs.js'
 import { isSubbedProgress, getMediaMaxEp } from '@/modules/anime/anime.js'
-import { getRandomInt, sleep, debounce } from '@/modules/util.js'
+import { getRandomInt, sleep, debounce, uniqueStore } from '@/modules/util.js'
 import { printError, status } from '@/modules/networking.js'
 import { cache, caches, mediaCache } from '@/modules/cache.js'
+import { MutationQueue } from '@/modules/mutationqueue.js'
 import { malClient } from '@/modules/myanimelist.js'
 import Helper from '@/modules/helper.js'
 import Debug from 'debug'
@@ -156,7 +157,7 @@ class AnilistClient {
   limiter = new Bottleneck({
     reservoir: 90,
     reservoirRefreshAmount: 90,
-    reservoirRefreshInterval: 60 * 1000,
+    reservoirRefreshInterval: 60 * 1_000,
     maxConcurrent: 10,
     minTime: 100
   })
@@ -165,6 +166,8 @@ class AnilistClient {
 
   /** @type {import('simple-store-svelte').Writable<ReturnType<AnilistClient['getUserLists']>>} */
   userLists = writable()
+
+  mutationQueue = new MutationQueue('syncQueueAni')
 
   userID = alToken
 
@@ -176,34 +179,47 @@ class AnilistClient {
       if (error.status === 500) return 1
 
       if (!error.statusText) {
-        if (!this.rateLimitPromise) this.rateLimitPromise = sleep(61 * 1000).then(() => { this.rateLimitPromise = null })
-        return 61 * 1000
+        if (!this.rateLimitPromise) this.rateLimitPromise = sleep(61 * 1_000).then(() => { this.rateLimitPromise = null })
+        return 61 * 1_000
       }
-      const time = (Number((error.headers.get('retry-after') || 60)) + 1) * 1000
+      const time = (Number((error.headers.get('retry-after') || 60)) + 1) * 1_000
       if (!this.rateLimitPromise) this.rateLimitPromise = sleep(time).then(() => { this.rateLimitPromise = null })
       return time
     })
 
     if (this.userID?.viewer?.data?.Viewer) {
       this.userLists.value = this.getUserLists({ sort: 'UPDATED_TIME_DESC'}, true)
-      setTimeout(async () => {
-        const updatedLists = await this.getUserLists({sort: 'UPDATED_TIME_DESC'})
-        this.userLists.value = Promise.resolve(updatedLists) // no need to have userLists await the entire query process while we already have previous values, (it's awful to wait 15+ seconds for the query to succeed with large lists)
-      })
+      setTimeout(() => {
+        this.getUserLists({ sort: 'UPDATED_TIME_DESC' }).then(updatedLists => {
+          this.userLists.value = Promise.resolve(updatedLists) // no need to have userLists await the entire query process while we already have previous values, (it's awful to wait 15+ seconds for the query to succeed with large lists)
+          this.#flushMutationQueue()
+        }).catch(error => debug('Failed to update user lists on init, this is likely a temporary connection issue:', error))
+      }).unref?.()
       this.findNewNotifications().catch((error) => debug('Failed to get new anilist notifications at the scheduled interval, this is likely a temporary connection issue:', JSON.stringify(error)))
       // update userLists every 15 mins
-      setInterval(async () => {
-        try {
-          const updatedLists = await this.getUserLists({sort: 'UPDATED_TIME_DESC'})
-          this.userLists.value = Promise.resolve(updatedLists) // no need to have userLists await the entire query process while we already have previous values, (it's awful to wait 15+ seconds for the query to succeed with large lists)
-        } catch (error) {
-          debug('Failed to update user lists at the scheduled interval, this is likely a temporary connection issue:', JSON.stringify(error))
-        }
-      }, 1000 * 60 * 15)
-      // check notifications every 5 mins
       setInterval(() => {
-        this.findNewNotifications().catch((error) => debug('Failed to get new anilist notifications at the scheduled interval, this is likely a temporary connection issue:', JSON.stringify(error)))
-      }, 1000 * 60 * 5)
+        this.getUserLists({ sort: 'UPDATED_TIME_DESC' }).then(updatedLists => {
+          this.userLists.value = Promise.resolve(updatedLists) // no need to have userLists await the entire query process while we already have previous values, (it's awful to wait 15+ seconds for the query to succeed with large lists)
+          this.#flushMutationQueue()
+        }).catch(error => debug('Failed to update user lists at the scheduled interval, this is likely a temporary connection issue:', error))
+      }, 1_000 * 60 * 15)
+      // check notifications every 5 mins
+      setInterval(() => this.findNewNotifications().catch((error) => debug('Failed to get new anilist notifications at the scheduled interval, this is likely a temporary connection issue:', JSON.stringify(error))), 1_000 * 60 * 5)
+      // update userLists and flush queued offline mutations when back online
+      uniqueStore(status).subscribe(value => {
+        if (value !== 'online') return
+        debug(`Back online${this.mutationQueue.hasPending ? ' with pending mutations' : ''}, refreshing user lists`)
+        this.getUserLists({ sort: 'UPDATED_TIME_DESC' }, false, true).then(updatedLists => {
+          this.userLists.value = Promise.resolve(updatedLists)
+          if (this.mutationQueue.hasPending) this.#flushMutationQueue()
+        }).catch(error => debug('Failed to refresh user lists after coming online:', error))
+      })
+    } else {
+      uniqueStore(status).subscribe(value => {
+        if (value !== 'online' || !this.mutationQueue.hasPending) return
+        debug('Back online with pending mutations, flushing mutation queue...')
+        this.#flushMutationQueue()
+      })
     }
   }
 
@@ -331,7 +347,7 @@ class AnilistClient {
         }
       }
     }
-    if ((newNotifications?.length > 0) || (lastNotified <= 1)) cache.setEntry(caches.NOTIFICATIONS, 'lastAni', Date.now() / 1000)
+    if ((newNotifications?.length > 0) || (lastNotified <= 1)) cache.setEntry(caches.NOTIFICATIONS, 'lastAni', Date.now() / 1_000)
   }
 
   /** @returns {Promise<import('./al.d.ts').PagedQuery<{ notifications: { id: number, type: string, createdAt: number, episode: number, media: import('./al.d.ts').Media}[] }>>} */
@@ -383,17 +399,19 @@ class AnilistClient {
         }
       }
     }`
-    return cache.cacheEntry(caches.NOTIFICATIONS, JSON.stringify(variables), variables, this.alRequest(query, variables), Date.now() + 4 * 60 * 1000) // expire after 4 minutes as this will be re-cached by our 5-minute interval.
+    return cache.cacheEntry(caches.NOTIFICATIONS, JSON.stringify(variables), variables, this.alRequest(query, variables), Date.now() + 4 * 60 * 1_000) // expire after 4 minutes as this will be re-cached by our 5-minute interval.
   }
 
   /** @returns {Promise<import('./al.d.ts').Query<{ MediaListCollection: import('./al.d.ts').MediaListCollection }>>} */
-  async getUserLists(variables = {}, ignoreExpiry) {
+  async getUserLists(variables = {}, ignoreExpiry = false, ignoreCache = false) {
     debug('Getting user lists')
     variables.id = variables.userID || this.userID?.viewer?.data?.Viewer?.id
     const userSort = variables.sort || 'UPDATED_TIME_DESC'
     if (!variables.sort || Helper.isUserSort(variables)) variables.sort = 'UPDATED_TIME_DESC'
-    const cachedEntry = this.sortListEntries(userSort, await cache.cachedEntry(caches.USER_LISTS, JSON.stringify(variables), ignoreExpiry || status.value.match(/offline/i)))
+    const cachedEntry = !ignoreCache && this.sortListEntries(userSort, await cache.cachedEntry(caches.USER_LISTS, JSON.stringify(variables), ignoreExpiry || status.value.match(/offline/i)))
     if (cachedEntry) return cachedEntry
+
+    this.mutationQueue.isFetchingList = true
     const query = /* js */` 
       query($id: Int, $sort: [MediaListSort]) {
         MediaListCollection(userId: $id, type: ANIME, sort: $sort, forceSingleCompletedList: true) {
@@ -413,12 +431,15 @@ class AnilistClient {
       if (res?.data?.MediaListCollection) break
       if (attempt < 3) { // stupid fix... probably could be improved...
         debug(`Error fetching user lists, attempt ${attempt} failed. Retrying in 5 seconds...`)
-        await new Promise(resolve => setTimeout(resolve, 5000))
+        await new Promise(resolve => setTimeout(resolve, 5_000).unref?.())
       } else {
         debug('Failed fetching user lists. Maximum of 3 attempts reached, giving up.')
       }
     }
-    return this.sortListEntries(userSort, await cache.cacheEntry(caches.USER_LISTS, JSON.stringify(variables), variables, res, Date.now() + 14 * 60 * 1000)) // expire after 14 minutes as this will be re-cached by our 15-minute interval.
+
+    const result = await cache.cacheEntry(caches.USER_LISTS, JSON.stringify(variables), variables, res, Date.now() + 14 * 60 * 1_000) // expire after 14 minutes as this will be re-cached by our 15-minute interval.
+    this.mutationQueue.isFetchingList = false
+    return this.sortListEntries(userSort, result)
   }
 
   /**
@@ -436,9 +457,9 @@ class AnilistClient {
     const getSortValue = (entry) => {
       switch (sort) {
         case 'STARTED_ON_DESC':
-          return entry?.media?.mediaListEntry?.startedAt ? (entry.media.mediaListEntry.startedAt.year || 0) * 10000 + (entry.media.mediaListEntry.startedAt.month || 0) * 100 + (entry.media.mediaListEntry.startedAt.day || 0) : 0
+          return entry?.media?.mediaListEntry?.startedAt ? (entry.media.mediaListEntry.startedAt.year || 0) * 10_000 + (entry.media.mediaListEntry.startedAt.month || 0) * 100 + (entry.media.mediaListEntry.startedAt.day || 0) : 0
         case 'FINISHED_ON_DESC':
-          return entry?.media?.mediaListEntry?.completedAt ? (entry.media.mediaListEntry.completedAt.year || 0) * 10000 + (entry.media.mediaListEntry.completedAt.month || 0) * 100 + (entry.media.mediaListEntry.completedAt.day || 0) : 0
+          return entry?.media?.mediaListEntry?.completedAt ? (entry.media.mediaListEntry.completedAt.year || 0) * 10_000 + (entry.media.mediaListEntry.completedAt.month || 0) * 100 + (entry.media.mediaListEntry.completedAt.day || 0) : 0
         case 'PROGRESS_DESC':
           const totalEpisodes = entry?.media?.episodes ?? getMediaMaxEp(entry?.media) ?? 0
           const progress = entry?.media?.mediaListEntry?.progress ?? 0
@@ -469,6 +490,14 @@ class AnilistClient {
 
   async entry(variables) {
     debug(`Updating entry for ${variables.id}`)
+
+    const progressBefore = this.mutationQueue.getProgressBefore(variables.id) ?? cache.getMedia(variables.id)?.mediaListEntry?.progress ?? null
+    if (status.value.match(/offline/i) && settings.value.offlineSync) {
+      debug(`We are offline and offline syncing is enabled, queuing entry update for media ${variables.id}`)
+      this.mutationQueue.enqueue('entry', variables.id, variables, null, progressBefore, false)
+      return { data: { SaveMediaListEntry: { ...(await this.#applyEntry(variables)) } } }
+    }
+
     const query = /* js */`
       mutation($id: Int, $status: MediaListStatus, $episode: Int, $repeat: Int, $score: Int, $startedAt: FuzzyDateInput, $completedAt: FuzzyDateInput) {
         SaveMediaListEntry(mediaId: $id, status: $status, progress: $episode, repeat: $repeat, scoreRaw: $score, startedAt: $startedAt, completedAt: $completedAt) {
@@ -491,13 +520,22 @@ class AnilistClient {
         }
       }`
     const res = await this.alRequest(query, variables)
-    if (!variables.token) await this.updateListEntry(variables.id, res?.data?.SaveMediaListEntry)
+    const listEntry = res?.data?.SaveMediaListEntry
+    if (!variables.token && !this.mutationQueue.enqueue('entry', variables.id, variables, listEntry, progressBefore)) await this.updateListEntry(variables.id, listEntry)
     //TODO: need to implement "else" for anilist syncing functionality. #updateListEntry
     return res
   }
 
   async delete(variables) {
     debug(`Deleting entry for ${variables.id}`)
+
+    if (status.value.match(/offline/i) && settings.value.offlineSync) {
+      debug(`We are offline and offline syncing is enabled, queuing entry deletion for media ${variables.id}`)
+      this.mutationQueue.enqueue('delete', variables.idAni, variables, null, null, false)
+      if (!variables.token) await this.deleteListEntry(variables.idAni)
+      return { data: { DeleteMediaListEntry: { deleted: true } } }
+    }
+
     const query = /* js */`
       mutation($id: Int) {
         DeleteMediaListEntry(id: $id) {
@@ -505,7 +543,7 @@ class AnilistClient {
         }
       }`
     const res = await this.alRequest(query, variables)
-    if (!variables.token) await this.deleteListEntry(variables.idAni)
+    if (!variables.token && !this.mutationQueue.enqueue('delete', variables.idAni, variables, null)) await this.deleteListEntry(variables.idAni)
     //TODO: need to implement "else" for anilist syncing functionality. #deleteListEntry
     return res
   }
@@ -526,7 +564,7 @@ class AnilistClient {
         }
       }
     })
-    cache.cacheEntry(caches.USER_LISTS, JSON.stringify({ sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id }), { sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id }, res, (await cache.cachedEntry(caches.USER_LISTS, JSON.stringify({ sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id })))?.expiry || (Date.now() + 14 * 60 * 1000))
+    cache.cacheEntry(caches.USER_LISTS, JSON.stringify({ sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id }), { sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id }, res, (await cache.cachedEntry(caches.USER_LISTS, JSON.stringify({ sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id })))?.expiry || (Date.now() + 14 * 60 * 1_000))
     this.userLists.value = res
   }
 
@@ -541,7 +579,7 @@ class AnilistClient {
         }
       }
     })
-    cache.cacheEntry(caches.USER_LISTS, JSON.stringify({ sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id }), { sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id }, res, (await cache.cachedEntry(caches.USER_LISTS, JSON.stringify({ sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id })))?.expiry || (Date.now() + 14 * 60 * 1000))
+    cache.cacheEntry(caches.USER_LISTS, JSON.stringify({ sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id }), { sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id }, res, (await cache.cachedEntry(caches.USER_LISTS, JSON.stringify({ sort: 'UPDATED_TIME_DESC', id: this.userID?.viewer?.data?.Viewer?.id })))?.expiry || (Date.now() + 14 * 60 * 1_000))
     this.userLists.value = res
   }
 
@@ -604,21 +642,21 @@ class AnilistClient {
       const titleObject = flattenedTitles[Number(variableName.slice(1))]
       if (searchResults[titleObject.key]) continue
       searchResults[titleObject.key] = media.map(media => getDistanceFromTitle(media, titleObject.title)).reduce((prev, curr) => prev.lavenshtein <= curr.lavenshtein ? prev : curr).id
-    // Convoluted and not as good as distance matching, better to return more than less.
-    //   if (searchResults[titleObject.key]) continue
-    //   for (const mediaItem of media) {
-    //     if (matchKeys(mediaItem, titleObject.title, ['title.userPreferred', 'title.english', 'title.romaji', 'title.native', 'synonyms'], titleObject.title.length > 15 ? 0.2 : titleObject.title.length > 9 ? 0.15 : 0.1)) {
-    //       searchResults[titleObject.key] = mediaItem.id
-    //       break
-    //     }
-    //   }
-    //   searchResults[titleObject.key] = !searchResults[titleObject.key] ? media.map(media => getDistanceFromTitle(media, titleObject.title)).reduce((prev, curr) => prev.lavenshtein <= curr.lavenshtein ? prev : curr).id : searchResults[titleObject.key]
+      // Convoluted and not as good as distance matching, better to return more than less.
+      //   if (searchResults[titleObject.key]) continue
+      //   for (const mediaItem of media) {
+      //     if (matchKeys(mediaItem, titleObject.title, ['title.userPreferred', 'title.english', 'title.romaji', 'title.native', 'synonyms'], titleObject.title.length > 15 ? 0.2 : titleObject.title.length > 9 ? 0.15 : 0.1)) {
+      //       searchResults[titleObject.key] = mediaItem.id
+      //       break
+      //     }
+      //   }
+      //   searchResults[titleObject.key] = !searchResults[titleObject.key] ? media.map(media => getDistanceFromTitle(media, titleObject.title)).reduce((prev, curr) => prev.lavenshtein <= curr.lavenshtein ? prev : curr).id : searchResults[titleObject.key]
     }
 
     const ids = Object.values(searchResults)
     const search = await this.searchIDS({ id: ids, perPage: 50, sort: 'OMIT' })
     const mappedResults = Object.entries(searchResults)?.map(([filename, id]) => [filename, search?.data?.Page?.media?.find(media => media.id === id)])
-    return mappedResults ? cache.cacheEntry(caches.COMPOUND, JSON.stringify(flattenedTitles), { mappings: true, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, mappedResults, Date.now() + getRandomInt(60, 90) * 60 * 1000) : cache.cachedEntry(caches.COMPOUND, JSON.stringify(flattenedTitles), true)
+    return mappedResults ? cache.cacheEntry(caches.COMPOUND, JSON.stringify(flattenedTitles), { mappings: true, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, mappedResults, Date.now() + getRandomInt(60, 90) * 60 * 1_000) : cache.cachedEntry(caches.COMPOUND, JSON.stringify(flattenedTitles), true)
   }
 
   search(variables = {}) {
@@ -648,7 +686,7 @@ class AnilistClient {
       }
     })()
 
-    return cache.cacheEntry(caches.SEARCH, JSON.stringify(variables), { ...variables, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, request, Date.now() + getRandomInt(75, 100) * 60 * 1000)
+    return cache.cacheEntry(caches.SEARCH, JSON.stringify(variables), { ...variables, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, request, Date.now() + getRandomInt(75, 100) * 60 * 1_000)
   }
 
   searchIDSingle(variables) {
@@ -671,7 +709,7 @@ class AnilistClient {
       }
     })()
 
-    return cache.cacheEntry(caches.SEARCH_IDS, JSON.stringify(variables), { ...variables, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, request, Date.now() + getRandomInt(80, 100) * 60 * 1000)
+    return cache.cacheEntry(caches.SEARCH_IDS, JSON.stringify(variables), { ...variables, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, request, Date.now() + getRandomInt(80, 100) * 60 * 1_000)
   }
 
   /** returns {import('./al.d.ts').PagedQuery<{media: import('./al.d.ts').Media[]}>} */
@@ -704,7 +742,7 @@ class AnilistClient {
       }
     })()
 
-    return cache.cacheEntry(caches.SEARCH_IDS, JSON.stringify(variables), { ...variables, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, request, Date.now() + getRandomInt(24, 30) * 60 * 1000)
+    return cache.cacheEntry(caches.SEARCH_IDS, JSON.stringify(variables), { ...variables, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, request, Date.now() + getRandomInt(24, 30) * 60 * 1_000)
   }
 
   /** returns {import('./al.d.ts').PagedQuery<{media: import('./al.d.ts').Media[]}>} */
@@ -725,7 +763,7 @@ class AnilistClient {
       if (!res?.data?.Page.pageInfo.hasNextPage) break
       currentPage++
     }
-    return cache.cacheEntry(caches.SEARCH_IDS, JSON.stringify(variables), { ...variables, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, ({ ...(failedRes || failedRes?.errors ? {errors: failedRes?.errors ? failedRes.errors : failedRes} : {}), data: { Page: {  pageInfo: { hasNextPage: false }, media: fetchedIDS } } }), Date.now() + getRandomInt(34, 46) * 60 * 1000)
+    return cache.cacheEntry(caches.SEARCH_IDS, JSON.stringify(variables), { ...variables, ...(malClient.userID ? { fillLists: malClient.userLists.value } : {}) }, ({ ...(failedRes || failedRes?.errors ? {errors: failedRes?.errors ? failedRes.errors : failedRes} : {}), data: { Page: {  pageInfo: { hasNextPage: false }, media: fetchedIDS } } }), Date.now() + getRandomInt(34, 46) * 60 * 1_000)
   }
 
   /** @returns {Promise<import('./al.d.ts').PagedQuery<{ airingSchedules: { airingAt: number, episode: number }[]}>>} */
@@ -742,7 +780,7 @@ class AnilistClient {
           }
         }
       }`
-    return cache.cacheEntry(caches.EPISODES, variables.id, variables, this.alRequest(query, variables), Date.now() + getRandomInt(75, 100) * 60 * 1000)
+    return cache.cacheEntry(caches.EPISODES, variables.id, variables, this.alRequest(query, variables), Date.now() + getRandomInt(75, 100) * 60 * 1_000)
   }
 
   /** @returns {Promise<import('./al.d.ts').Query<{ AiringSchedule: { airingAt: number }}>>} */
@@ -756,7 +794,7 @@ class AnilistClient {
           airingAt
         }
       }`
-    return cache.cacheEntry(caches.EPISODES, JSON.stringify(variables), variables, this.alRequest(query, variables), Date.now() + getRandomInt(90, 100) * 60 * 1000)
+    return cache.cacheEntry(caches.EPISODES, JSON.stringify(variables), variables, this.alRequest(query, variables), Date.now() + getRandomInt(90, 100) * 60 * 1_000)
   }
 
   /** @returns {Promise<import('./al.d.ts').PagedQuery<{ mediaList: import('./al.d.ts').Following[]}>>} */
@@ -802,7 +840,7 @@ class AnilistClient {
           }
         }
       }`
-    return cache.cacheEntry(caches.FOLLOWING, JSON.stringify(variables), variables, this.alRequest(query, variables), Date.now() + getRandomInt(200, 300) * 60 * 1000)
+    return cache.cacheEntry(caches.FOLLOWING, JSON.stringify(variables), variables, this.alRequest(query, variables), Date.now() + getRandomInt(200, 300) * 60 * 1_000)
   }
 
   /** @returns {Promise<import('./al.d.ts').Query<{Media: import('./al.d.ts').Media}>>} */
@@ -823,7 +861,7 @@ class AnilistClient {
           ${queryComplexObjects}
         }
       }`
-    return cache.cacheEntry(caches.RECOMMENDATIONS, variables.id, variables, this.alRequest(query, variables), Date.now() + getRandomInt(1500, 2000) * 60 * 1000)
+    return cache.cacheEntry(caches.RECOMMENDATIONS, variables.id, variables, this.alRequest(query, variables), Date.now() + getRandomInt(1_500, 2_000) * 60 * 1_000)
   }
 
   favourite(variables) {
@@ -833,10 +871,14 @@ class AnilistClient {
         ToggleFavourite(animeId: $id) { anime { nodes { id } } } 
       }`
     const cachedMedia = cache.getMedia(variables.id)
-    const isFavourite = cachedMedia?.isFavourite
-    if (cachedMedia) cachedMedia.isFavourite = !isFavourite
-    this.alRequest(query, variables)
-    return !isFavourite
+    if (cachedMedia) cachedMedia.isFavourite = variables.isFavourite
+    if (status.value.match(/offline/i) && settings.value.offlineSync) {
+      debug(`We are offline and offline syncing is enabled, queuing favourite for media ${variables.id}`)
+      this.mutationQueue.enqueue('favourite', variables.id, variables, null, null, false)
+      return variables.isFavourite
+    }
+    this.alRequest(query, variables).then(() => this.mutationQueue.enqueue('favourite', variables.id, variables, variables.isFavourite))
+    return variables.isFavourite
   }
 
   /** @param {import('./al.d.ts').Media} media */
@@ -852,6 +894,51 @@ class AnilistClient {
   reviews(media) {
     const totalReviewers = media.stats?.scoreDistribution?.reduce((total, score) => total + score.amount, 0)
     return media.averageScore && totalReviewers ? totalReviewers.toLocaleString() : '?'
+  }
+
+  /**
+   * Flushes the mutation queue after userLists.value has been set.
+   * Skips if a userlist fetch is in progress to avoid overwriting stale data.
+   * Re-applies executed mutations to local cache and executes offline mutations against the API, both validated against the current resolved list.
+   */
+  async #flushMutationQueue() {
+    if (this.mutationQueue.isFetchingList) return
+    const mediaList = (await this.userLists.value)?.data?.MediaListCollection
+    await this.mutationQueue.flush(
+      mediaList,
+      async (mutation) => {
+        if (mutation.type === 'entry') await this.updateListEntry(mutation.mediaId, mutation.result)
+        else if (mutation.type === 'delete') await this.deleteListEntry(mutation.mediaId)
+        else if (mutation.type === 'favourite') this.favourite({ id: mutation.mediaId })
+      },
+      async (mutation) => {
+        if (mutation.type === 'entry') await this.entry(mutation.variables)
+        else if (mutation.type === 'delete') await this.delete(mutation.variables)
+        else if (mutation.type === 'favourite') this.favourite(mutation.variables)
+      }
+    )
+  }
+
+  /**
+   * Builds and applies an optimistic local cache entry from raw mutation variables, merging with the existing mediaListEntry so unset fields are preserved.
+   * Used to update the UI immediately when offline or before the API responds.
+   * @param {Record<string, any>} variables The mutation variables from entry()
+   * @returns {Promise<Record<string, any> | undefined>} The constructed list entry, or undefined if media not found
+   */
+  async #applyEntry(variables) {
+    const existing = cache.getMedia(variables.id)
+    if (!existing) return
+    const updatedEntry = {
+      ...(existing.mediaListEntry ?? {}),
+      status: variables.status ?? existing.mediaListEntry?.status,
+      progress: variables.episode ?? existing.mediaListEntry?.progress,
+      repeat: variables.repeat ?? existing.mediaListEntry?.repeat,
+      score: variables.score ?? existing.mediaListEntry?.score,
+      updatedAt: Math.floor(Date.now() / 1_000)
+    }
+    Object.assign(updatedEntry, Helper.getFuzzyDate(existing, variables.status))
+    if (!variables.token) await this.updateListEntry(variables.id, updatedEntry)
+    return updatedEntry
   }
 
   /** @type {Set<number>} */
@@ -966,11 +1053,11 @@ class AnilistClient {
           case 'SCORE_DESC':
             return (b.averageScore || 0) - (a.averageScore || 0)
           case 'START_DATE_DESC':
-            return ((b.startDate?.year || 0) * 10000 + (b.startDate?.month || 0) * 100 + (b.startDate?.day || 0)) - ((a.startDate?.year || 0) * 10000 + (a.startDate?.month || 0) * 100 + (a.startDate?.day || 0))
+            return ((b.startDate?.year || 0) * 10_000 + (b.startDate?.month || 0) * 100 + (b.startDate?.day || 0)) - ((a.startDate?.year || 0) * 10_000 + (a.startDate?.month || 0) * 100 + (a.startDate?.day || 0))
           case 'FINISHED_ON_DESC':
-            return (b.mediaListEntry?.completedAt ? (b.mediaListEntry.completedAt.year || 0) * 10000 + (b.mediaListEntry.completedAt.month || 0) * 100 + (b.mediaListEntry.completedAt.day || 0) : 0) - (a.mediaListEntry?.completedAt ? (a.mediaListEntry.completedAt.year || 0) * 10000 + (a.mediaListEntry.completedAt.month || 0) * 100 + (a.mediaListEntry.completedAt.day || 0) : 0)
+            return (b.mediaListEntry?.completedAt ? (b.mediaListEntry.completedAt.year || 0) * 10_000 + (b.mediaListEntry.completedAt.month || 0) * 100 + (b.mediaListEntry.completedAt.day || 0) : 0) - (a.mediaListEntry?.completedAt ? (a.mediaListEntry.completedAt.year || 0) * 10_000 + (a.mediaListEntry.completedAt.month || 0) * 100 + (a.mediaListEntry.completedAt.day || 0) : 0)
           case 'STARTED_ON_DESC':
-            return (b.mediaListEntry?.startedAt ? (b.mediaListEntry.startedAt.year || 0) * 10000 + (b.mediaListEntry.startedAt.month || 0) * 100 + (b.mediaListEntry.startedAt.day || 0) : 0) - (a.mediaListEntry?.startedAt ? (a.mediaListEntry.startedAt.year || 0) * 10000 + (a.mediaListEntry.startedAt.month || 0) * 100 + (a.mediaListEntry.startedAt.day || 0) : 0)
+            return (b.mediaListEntry?.startedAt ? (b.mediaListEntry.startedAt.year || 0) * 10_000 + (b.mediaListEntry.startedAt.month || 0) * 100 + (b.mediaListEntry.startedAt.day || 0) : 0) - (a.mediaListEntry?.startedAt ? (a.mediaListEntry.startedAt.year || 0) * 10_000 + (a.mediaListEntry.startedAt.month || 0) * 100 + (a.mediaListEntry.startedAt.day || 0) : 0)
           case 'UPDATED_TIME_DESC':
             return (b.mediaListEntry?.updatedAt || 0) - (a.mediaListEntry?.updatedAt || 0)
           case 'PROGRESS_DESC':

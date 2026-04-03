@@ -36,7 +36,7 @@
   }
   const playButtonText = getPlayButtonText(media)
   function toggleFavourite() {
-    media.isFavourite = anilistClient.favourite({ id: media.id })
+    media.isFavourite = anilistClient.favourite({ id: media.id, isFavourite: !media.isFavourite })
   }
   function play() {
     if (media.status === 'NOT_YET_RELEASED') return

@@ -20,7 +20,7 @@
   mediaCache.subscribe((value) => { if (current?.id && value && value[current?.id]?.id && (JSON.stringify(value[current?.id]) !== JSON.stringify(current))) { current = value[current?.id]; currentStatic = current } })
 
   function toggleFavourite () {
-    current.isFavourite = anilistClient.favourite({ id: current.id })
+    current.isFavourite = anilistClient.favourite({ id: current.id, isFavourite: !current.isFavourite })
   }
 
   function currentIndex () {

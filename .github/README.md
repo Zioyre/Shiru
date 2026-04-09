@@ -26,6 +26,10 @@ https://github.com/user-attachments/assets/3ff100f0-e008-4ff5-88f5-ad4290863f96
 
 **Shiru** is a feature-rich anime library manager built around speed, control, and a seamless viewing experience, with full mobile support. Your files play directly for near-instant playback, giving you full native video performance with no transcoding and no compression.
 
+> [!IMPORTANT]
+> This application **does not host, distribute, or provide media content**.
+>
+> Shiru is intended solely as a **personal media library manager** for organizing, tracking, and playing content that you **legally own**. Users are responsible for ensuring that all media content used with this application has been **legally** obtained and that its use complies with all applicable **copyright laws**.
 
 ## 💻 Supported Platforms
 - 🪟 Windows

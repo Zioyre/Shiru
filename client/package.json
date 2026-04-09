@@ -6,6 +6,6 @@
     "matroska-metadata": "^1.0.8",
     "parse-torrent": "^11.0.19",
     "uint8-util": "^2.2.6",
-    "webtorrent": "^2.8.5"
+    "webtorrent": "github:RockinChaos/webtorrent#v2.8.7"
   }
 }

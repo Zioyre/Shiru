@@ -313,6 +313,11 @@ class HistoryManager {
    */
   navigatePage(pageValue) {
     debug('navigatePage called', pageValue)
+    const tempIndex = this.history.findIndex(state => state.isTemp)
+    if (tempIndex !== -1) {
+      this.history.splice(tempIndex, 1)
+      debug('Removed temp entry before navigation', JSON.stringify(tempIndex))
+    }
     const filteredModals = { ...modal.value }
     delete filteredModals[modal.MINIMIZE_PROMPT]
     delete filteredModals[modal.UPDATE_PROMPT]
@@ -321,6 +326,7 @@ class HistoryManager {
       this.addHistoryEntry('modal', filteredModals)
     }
     if (modal.length) this.setIgnoreNext(() => modal.clear())
+    if (page.value === pageValue) this.addHistoryEntry('page', pageValue)
     page.set(pageValue)
   }
 
@@ -353,6 +359,7 @@ class HistoryManager {
           this.setIgnoreNext(() => modal.set(current.value))
           skipNavigation = true
           debug('Modal restored without moving history', current.value)
+          this.syncState()
         }
       }
     }

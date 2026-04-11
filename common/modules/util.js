@@ -640,6 +640,7 @@ export const defaults = {
   playerPath: '',
   playerSeek: 2,
   playerSkip: false,
+  playerTitleTop: true,
   playerChapterSkip: 'embedded',
   configTrackers: false,
   trackers: [

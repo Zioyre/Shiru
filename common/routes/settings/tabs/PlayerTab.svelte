@@ -172,6 +172,12 @@
     <label for='player-skip'>{settings.playerSkip ? 'On' : 'Off'}</label>
   </div>
 </SettingCard>
+<SettingCard title='Title Position' description='Changes the position of the anime title overlay in the player between the top left or bottom left.'>
+  <div class='custom-switch fit-content'>
+    <input type='checkbox' id='player-title-position' bind:checked={settings.playerTitleTop} />
+    <label for='player-title-position'>{settings.playerTitleTop ? 'Top Left' : 'Bottom Left'}</label>
+  </div>
+</SettingCard>
 
 <h4 class='mb-10 font-weight-bold'>External Player Settings</h4>
 <SettingCard title='Enable External Player' description='Tells Shiru to open a custom user-picked external video player to play video, instead of using the built-in one.'>

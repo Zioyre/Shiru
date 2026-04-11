@@ -17,8 +17,7 @@ export default class Protocol {
     schedule: () => IPC.emit('schedule'),
     donate: () => Browser.open({url: 'https://github.com/sponsors/RockinChaos/'}),
     update: () => IPC.emit('quit-and-install'),
-    changelog: () => Browser.open({url: 'https://github.com/RockinChaos/Shiru/releases/latest'}),
-    show: () => IPC.emit('window-show')
+    changelog: () => Browser.open({url: 'https://github.com/RockinChaos/Shiru/releases/latest'})
   }
 
   protocolRx = /shiru:\/\/([a-z0-9]+)\/(.*)/i
@@ -82,7 +81,6 @@ export default class Protocol {
    */
   play(id) {
     IPC.emit('play-anime', id)
-    IPC.emit('window-show')
   }
 
   /**
@@ -91,7 +89,6 @@ export default class Protocol {
    */
   add(magnet, base64 = false) {
     IPC.emit('play-torrent', { magnet, base64 })
-    IPC.emit('window-show')
   }
 
   /**

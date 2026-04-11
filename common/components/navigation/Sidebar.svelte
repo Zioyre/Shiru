@@ -9,7 +9,7 @@
   import { toast } from 'svelte-sonner'
   import Helper from '@/modules/helper.js'
   import { page, modal, playPage } from '@/modules/navigation.js'
-  import { IPC, ELECTRON, VERSION } from '@/modules/bridge.js'
+  import { ELECTRON, COMMON } from '@/modules/bridge.js'
   import { goBack, goForward, canGoBack, canGoForward } from '@/modules/navigation.js'
   import SidebarLink from '@/components/navigation/SidebarLink.svelte'
   import { MoveLeft, MoveRight, CalendarSearch, Download, CloudDownload, Heart, Home, Search, ListVideo, History, TvMinimalPlay, LogIn, Settings, Users, Bell, BellDot } from 'lucide-svelte'
@@ -35,7 +35,7 @@
   <div class='z--1 pointer-events-none h-full bg-dark position-absolute' style='width: var(--sidebar-width)'/>
   <div class='sidebar-overlay z--1 pointer-events-none h-full position-absolute' class:animated={$settings.expandingSidebar} />
   <div class='sidebar-menu h-full d-flex flex-column m-0 pb-5 animate' class:br-10={!$settings.expandingSidebar}>
-    <div class='w-50 top-0 flex-shrink-0 pointer-events-none {_status?.match(/offline/i) ? `h-25` : `${VERSION.platform === `darwin` && !fullScreen ? `h-25` : `h-0`}`}' class:status-transition={statusTransition}/>
+    <div class='w-50 top-0 flex-shrink-0 pointer-events-none {_status?.match(/offline/i) ? `h-25` : `${COMMON.getPlatformInfo().platform === `darwin` && !fullScreen ? `h-25` : `h-0`}`}' class:status-transition={statusTransition}/>
     {#if !SUPPORTS.isAndroid}
       <div class='d-flex align-items-center justify-content-center z-102' style='width: var(--sidebar-width); margin-top:{`1rem`} !important'>
         <SidebarLink click={goBack} icon='moveleft' css='p-0 m-0 ml-5 h-auto w-30' innerCss='rounded-left-block' >
@@ -91,7 +91,7 @@
       <Download size={btnSize} class='flex-shrink-0 p-5 m-5 rounded' strokeWidth='2.5' color={active ? 'currentColor' : 'var(--gray-color-very-dim)'} />
     </SidebarLink>
     {#if $settings.donate && !SUPPORTS.isAndroid}
-      <SidebarLink click={() => { IPC.emit('open', 'https://github.com/sponsors/RockinChaos/') }} icon='favorite' text='Support This App' css='mt-md-h-auto d-sm-h-none' let:active let:hovering>
+      <SidebarLink click={() => { COMMON.openURI('https://github.com/sponsors/RockinChaos/') }} icon='favorite' text='Support This App' css='mt-md-h-auto d-sm-h-none' let:active let:hovering>
         <Heart size={btnSize} class='flex-shrink-0 p-5 m-5 rounded fill-1 donate' strokeWidth='2.5' fill='currentColor' style='--fill-button-color: {hovering ? `var(--gray-color-very-dim)` : `var(--quattuordenary-color)`}' />
       </SidebarLink>
     {/if}

@@ -27,7 +27,7 @@ export default class Protocol {
     donate: () => shell.openExternal('https://github.com/sponsors/RockinChaos/'),
     update: () => ipcMain.emit('quit-and-install'),
     changelog: () => shell.openExternal('https://github.com/RockinChaos/Shiru/releases/latest'),
-    show: () => ipcMain.emit('window-show')
+    show: () => ipcMain.emit('electron:showAndFocus')
   }
 
   protocolRx = /shiru:\/\/([a-z0-9]+)\/(.*)/i
@@ -65,7 +65,7 @@ export default class Protocol {
     })
 
     if (process.argv.length >= 2 && !process.defaultApp) {
-      ipcMain.on('version', () => {
+      ipcMain.on('webtorrent-heartbeat', () => {
         for (const line of process.argv) {
           this.handleProtocol(line)
         }
@@ -74,7 +74,7 @@ export default class Protocol {
 
     app.on('second-instance', (event, commandLine) => {
       // Someone tried to run a second instance, we should focus our window.
-      ipcMain.emit('window-show')
+      ipcMain.emit('electron:showAndFocus')
       // There's probably a better way to do this instead of a for loop and split[1][0]
       // but for now it works as a way to fix multiple OS's commandLine differences
       for (const line of commandLine) {
@@ -91,9 +91,7 @@ export default class Protocol {
       }
     })
 
-    ipcMain.on('handle-protocol', (event, text) => {
-      this.handleProtocol(text)
-    })
+    ipcMain.on('electron:handleProtocol', (event, text) => this.handleProtocol(text))
   }
 
   /**
@@ -134,7 +132,7 @@ export default class Protocol {
    */
   play(id) {
     this.window.webContents.send('play-anime', id)
-    ipcMain.emit('window-show')
+    ipcMain.emit('electron:showAndFocus')
   }
 
   /**
@@ -142,7 +140,7 @@ export default class Protocol {
    */
   add(magnet) {
     this.window.webContents.send('play-torrent', { magnet })
-    ipcMain.emit('window-show')
+    ipcMain.emit('electron:showAndFocus')
   }
 
   /**

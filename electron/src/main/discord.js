@@ -34,12 +34,12 @@ export default class Discord {
 
   /** @param {import('electron').BrowserWindow} window */
   constructor (window) {
-    ipcMain.on('discord', (event, data) => {
+    ipcMain.on('electron:setPresence', (event, data) => {
       this.cachedPresence = data
       this.debouncedDiscordRPC(this.enableRPC === 'full' ? this.cachedPresence : undefined, this.enableRPC === 'disabled')
     })
 
-    ipcMain.on('discord-rpc', (event, data) => {
+    ipcMain.on('electron:setDiscordRPC', (event, data) => {
       if (this.enableRPC !== data) {
         this.enableRPC = data
         if (data !== 'disabled') {
@@ -51,7 +51,7 @@ export default class Discord {
       }
     })
 
-    ipcMain.on('discord-clear', () => this.debouncedDiscordRPC(undefined, true))
+    ipcMain.on('electron:clearPresence', () => this.debouncedDiscordRPC(undefined, true))
 
     this.discord.on('ready', async () => {
       this.setDiscordRPC(this.enableRPC === 'full' ? this.cachedPresence : undefined)

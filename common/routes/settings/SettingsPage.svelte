@@ -1,13 +1,12 @@
 <script context='module'>
   import { settings } from '@/modules/settings.js'
   import { SUPPORTS } from '@/modules/support.js'
-  import { capitalize } from '@/modules/util.js'
+  import { capitalize, debounce } from '@/modules/util.js'
   import { toast } from 'svelte-sonner'
-  import { IPC, ANDROID, VERSION } from '@/modules/bridge.js'
+  import { IPC, ANDROID, COMMON, ELECTRON } from '@/modules/bridge.js'
   import Debug from 'debug'
   const debug = Debug('ui:settings-view')
 
-  if (settings.value.enableDoH) IPC.emit('doh', settings.value.doHURL)
   export const platformMap = {
     aix: 'Aix',
     darwin: 'MacOS',
@@ -20,13 +19,14 @@
     win32: 'Windows'
   }
   export let version = '1.0.0'
-  IPC.on('version', data => {
-    version = data
-    debug(`v${version} ${platformMap[VERSION.platform] || 'dev'} ${VERSION.arch || 'dev'} ${capitalize(VERSION.session) || ''}`, JSON.stringify(settings))
+  const debounceRPC = debounce((state) => ELECTRON.setDiscordRPC(state), 100)
+  COMMON.getAppVersion().then(_version => {
+    version = _version
+    debug(`v${version} ${platformMap[COMMON.getPlatformInfo().platform] || 'dev'} ${COMMON.getPlatformInfo().arch || 'dev'} ${capitalize(COMMON.getPlatformInfo().session) || ''}`, JSON.stringify(settings))
   })
-  IPC.emit('version')
-  IPC.emit('discord-rpc', settings.value.enableRPC)
-  if (SUPPORTS.angle) settings.value.angle = await IPC.invoke('get:angle')
+  debounceRPC(settings.value.enableRPC)
+  if (settings.value.enableDoH) ELECTRON.setDoH(settings.value.doHURL)
+  if (SUPPORTS.angle) settings.value.angle = await ELECTRON.getAngle()
   if (SUPPORTS.isAndroid) setTimeout(() => requestFileAccess(settings.value.torrentPathNew), 2_500).unref?.()
   function requestFileAccess(path, cb) {
     if (path && path !== '/tmp') {
@@ -104,7 +104,7 @@
     donate: {
       name: 'Donate',
       icon: Heart,
-      action: () => IPC.emit('open', 'https://github.com/sponsors/RockinChaos/'),
+      action: () => COMMON.openURI('https://github.com/sponsors/RockinChaos/'),
       sidebar: true
     }
   }
@@ -117,7 +117,8 @@
     $settings.playerPath = data
   }
 
-  $: IPC.emit('discord-rpc', $settings.enableRPC)
+  $: debounceRPC($settings.enableRPC)
+
   IPC.on('path', pathListener)
   IPC.on('player', playerListener)
   onDestroy(() => {
@@ -142,7 +143,7 @@
         </div>
         <div class='d-none d-lg-block mt-auto'>
           <p class='text-muted px-20 py-10 m-0'>Not sure what a setting does? Leave it as default. Some settings require the app to be restarted to take effect.</p>
-          <p class='text-muted px-20 m-0 mb-lg-20'>{version ? `v${version} ${semver.prerelease(version) ? `(Nightly)` : ``}` : ``} {platformMap[VERSION.platform] || 'dev'} {VERSION.arch || 'dev'} {capitalize(VERSION.session) || ''}</p>
+          <p class='text-muted px-20 m-0 mb-lg-20'>{version ? `v${version} ${semver.prerelease(version) ? `(Nightly)` : ``}` : ``} {platformMap[COMMON.getPlatformInfo().platform] || 'dev'} {COMMON.getPlatformInfo().arch || 'dev'} {capitalize(COMMON.getPlatformInfo().session) || ''}</p>
         </div>
       </div>
     </div>

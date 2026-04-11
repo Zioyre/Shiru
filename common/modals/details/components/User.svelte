@@ -6,7 +6,7 @@
   import { since, capitalize, fadeIn, fadeOut } from '@/modules/util.js'
   import { click, hover, focus } from '@/modules/click.js'
   import { copyToClipboard } from '@/modules/clipboard.js'
-  import { IPC } from '@/modules/bridge.js'
+  import { COMMON } from '@/modules/bridge.js'
   import WPC from '@/modules/wpc.js'
 
   export let user = {}
@@ -69,7 +69,7 @@
             <SmartImage class='position-absolute h-full w-full cover-img opacity-55 inset-0' images={[user.bannerImage, './404_banner.png']}/>
           {/if}
           <div class='top-inner d-flex align-items-end w-full z-2'>
-            <div role='button' class='rounded-circle' class:pointer={user.siteUrl} data-toggle='{user.siteUrl ? `tooltip` : ``}' data-placement='top-left' data-title='Share to Clipboard' tabindex='-1' use:click={() => copyToClipboard(user.siteUrl, 'user URL')} on:contextmenu|preventDefault={() => { if (user.siteUrl) IPC.emit('open', user.siteUrl) }}>
+            <div role='button' class='rounded-circle' class:pointer={user.siteUrl} data-toggle='{user.siteUrl ? `tooltip` : ``}' data-placement='top-left' data-title='Share to Clipboard' tabindex='-1' use:click={() => copyToClipboard(user.siteUrl, 'user URL')} on:contextmenu|preventDefault={() => { if (user.siteUrl) COMMON.openURI(user.siteUrl) }}>
               <div class='h-80 w-80 rounded-circle overflow-hidden flex-shrink-0' style='border: .4rem solid hsla(var(--gray-color-hsl), 0.15); clip-path: circle(50% at 50% 50%)'>
                 {#if avatar}
                   <SmartImage class='w-full h-full cover-img' images={[avatar, './404_square.png']}/>

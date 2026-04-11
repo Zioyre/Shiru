@@ -30,11 +30,11 @@ const flags = [
 for (const [flag, value] of flags) app.commandLine.appendSwitch(flag, value)
 app.commandLine.appendSwitch('use-angle', store.get('angle') || 'default')
 
-ipcMain.on('open', (event, url) => shell.openExternal(url))
-ipcMain.on('set:angle', (event, data) => store.set('angle', data))
-ipcMain.on('version', ({ sender }) => sender.send('version', getAppVersion()))
-ipcMain.handle('get:angle', () => store.get('angle') || 'default')
-ipcMain.on('doh', (event, dns) => {
+ipcMain.handle('common:getAppVersion', () => getAppVersion())
+ipcMain.handle('common:openURI', (event, uri) => shell.openExternal(uri))
+ipcMain.handle('electron:getAngle', () => store.get('angle') || 'default')
+ipcMain.on('electron:setAngle', (event, angle) => store.set('angle', angle))
+ipcMain.on('electron:setDoH', (event, dns) => {
   try {
     app.configureHostResolver({
       secureDnsMode: 'secure',

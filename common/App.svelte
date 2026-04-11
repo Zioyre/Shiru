@@ -1,5 +1,5 @@
 <script context='module'>
-  import { IPC } from '@/modules/bridge.js'
+  import { IPC, ELECTRON } from '@/modules/bridge.js'
   import { writable } from 'simple-store-svelte'
   import { anilistClient } from '@/modules/anilist.js'
   import { page, modal, destroyHistory, enableHistory } from '@/modules/navigation.js'
@@ -7,7 +7,7 @@
   export const statusTransition = writable(false)
 
   export async function handleAnime (detail) {
-    IPC.emit('window-show')
+    ELECTRON.showAndFocus()
     modal.close(modal.ANIME_DETAILS)
     const foundMedia = (await anilistClient.searchIDSingle(!detail.mal ? { id: detail.id } : { idMal: detail.id })).data.Media
     if (foundMedia) modal.open(modal.ANIME_DETAILS, foundMedia)

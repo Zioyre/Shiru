@@ -180,12 +180,6 @@ function setupTorrentClient() {
   for (const event of ['magnet', 'stats', 'chapters', 'progress', 'externalReady', 'externalWatched', 'androidExternal', 'scrape_done', 'rescan_done']) client.on(event, ({ detail }) => WPC.send(event, detail))
   for (const event of ['current', 'scrape', 'externalPlay', 'debug']) WPC.listen(event, (detail) => client.send(event, detail))
 
-  // external player for android
-  client.on('open', ({ detail }) => {
-    debug(`Open:`, JSON.stringify(detail))
-    IPC.emit('intent', detail)
-  })
-
   client.on('activity', ({ detail }) => {
     loadedTorrent.update(() => ({ ...detail.current }))
     stagingTorrents.update(() => Array.from(new Map(detail.staging.map(torrent => [torrent.infoHash, torrent])).values()))

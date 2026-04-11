@@ -1,4 +1,5 @@
 import { App } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
 import { IntentUri } from 'capacitor-intent-uri'
 import { Filesystem } from '@capacitor/filesystem'
 import { ForegroundService, Importance, ServiceType } from '@capawesome-team/capacitor-android-foreground-service'
@@ -42,9 +43,14 @@ ForegroundService.createNotificationChannel({
 })
 
 window.IPC = IPC
-window.version = {
-  platform: globalThis.cordova?.platformId,
-  arch: navigator.platform?.split(' ')?.[1]
+window.common = {
+  getAppVersion: async () => (await App.getInfo())?.version,
+  getPlatformInfo: () => ({
+    platform: globalThis.cordova?.platformId,
+    arch: navigator.platform?.split(' ')?.[1]
+  }),
+  openURI: async (uri) => Browser.open({ url: uri }),
+  linkAccount: async (uri) => Browser.open({ url: uri })
 }
 window.android = {
   /**

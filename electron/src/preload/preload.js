@@ -15,17 +15,36 @@ contextBridge.exposeInMainWorld('IPC', {
   },
   invoke: (event, data) => ipcRenderer.invoke(event, data)
 })
-contextBridge.exposeInMainWorld('version', {
-  arch: process.arch,
-  platform: process.platform,
-  session: process.env.XDG_SESSION_TYPE || ''
+contextBridge.exposeInMainWorld('common', {
+  getAppVersion: () => ipcRenderer.invoke('common:getAppVersion'),
+  getPlatformInfo: () => ({
+    platform: process.platform,
+    arch: process.arch,
+    session: process.env.XDG_SESSION_TYPE || ''
+  }),
+  openURI: (uri) => ipcRenderer.invoke('common:openURI', uri),
+  linkAccount: (uri) => ipcRenderer.invoke('common:linkAccount', uri),
 })
 contextBridge.exposeInMainWorld('electron', {
+  exit: () => ipcRenderer.send('electron:Exit'),
+  setDoH: (url) => ipcRenderer.send('electron:setDoH', url),
+  getAngle: () => ipcRenderer.invoke('electron:getAngle'),
+  setAngle: (angle) => ipcRenderer.send('electron:setAngle', angle),
   isMinimized: () => ipcRenderer.invoke('electron:isMinimized'),
   isFullScreen: () => ipcRenderer.invoke('electron:isFullScreen'),
   onMinimize: (callback) => ipcRenderer.on('electron:onMinimize', (event, isMinimized) => callback(isMinimized)),
   onFullScreen: (callback) => ipcRenderer.on('electron:onFullScreen', (event, isFullScreen) => callback(isFullScreen)),
-  getYouTube: () => ipcRenderer.invoke('electron:getYouTube'),
+  hideWindow: () => ipcRenderer.send('electron:hideWindow'),
+  showAndFocus: () => ipcRenderer.send('electron:showAndFocus'),
+  onExitIntent: (callback) => ipcRenderer.on('electron:onExitIntent', callback),
+  openTorrentDevTools: () => ipcRenderer.send('electron:openTorrentDevTools'),
+  openDevTools: () => ipcRenderer.send('electron:openDevTools'),
+  setUnreadCount: (notificationCount) => ipcRenderer.send('electron:setUnreadCount', notificationCount),
+  setDiscordRPC: (state) => ipcRenderer.send('electron:setDiscordRPC', state),
+  setPresence: (activity) => ipcRenderer.send('electron:setPresence', activity),
+  clearPresence: () => ipcRenderer.send('electron:clearPresence'),
+  handleProtocol: () => ipcRenderer.send('electron:handleProtocol'),
+  getYouTube: () => ipcRenderer.invoke('electron:getYouTube')
 })
 
 let _ports

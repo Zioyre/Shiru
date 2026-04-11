@@ -25,7 +25,7 @@
   import Keybinds, { loadWithDefaults, condition } from 'svelte-keybinds'
   import { SUPPORTS } from '@/modules/support.js'
   import 'rvfc-polyfill'
-  import { IPC, ELECTRON, ANDROID } from '@/modules/bridge.js'
+  import { ELECTRON, ANDROID } from '@/modules/bridge.js'
   import WPC from '@/modules/wpc.js'
   import { X, Minus, ArrowDown, ArrowUp, Captions, CircleHelp, Contrast, FastForward, Keyboard, EllipsisVertical, SquareArrowOutUpRight, List, Eye, FilePlus2, ListMusic, ListVideo, Maximize, Minimize, Pause, PictureInPicture, PictureInPicture2, Play, Proportions, RefreshCcw, Rewind, RotateCcw, RotateCw, ScreenShare, SkipBack, SkipForward, Users, Volume1, Volume2, VolumeX, SlidersVertical, SquarePen, Milestone, ClockArrowDown, ClockArrowUp } from 'lucide-svelte'
   import Debug from 'debug'
@@ -1541,7 +1541,7 @@
   function setDiscordRPC (np = media, browsing) {
     if ((!np || Object.keys(np).length === 0) && !browsing) return
     if (hidden) {
-      IPC.emit('discord-clear')
+      ELECTRON.clearPresence()
       return
     }
     let activity
@@ -1609,7 +1609,7 @@
         type: 3
       }
     }
-    IPC.emit('discord', { activity })
+    ELECTRON.setPresence({ activity })
   }
 </script>
 

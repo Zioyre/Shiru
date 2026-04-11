@@ -10,7 +10,7 @@
   import { settings } from '@/modules/settings.js'
   import { page, modal } from '@/modules/navigation.js'
   import { createDeferred, uniqueStore } from '@/modules/util.js'
-  import { IPC } from '@/modules/bridge.js'
+  import { IPC, COMMON } from '@/modules/bridge.js'
   import { toast } from 'svelte-sonner'
   import semver from 'semver'
 
@@ -104,7 +104,7 @@
       })
     }).catch(() => {
       toast.error(SUPPORTS.isAndroid ? 'Update Aborted' : 'Update Failed', {
-        id, duration: 15_000, description: SUPPORTS.isAndroid ? 'Update was not installed. The process was canceled or an error occurred.' : 'Something went wrong during the update process!'
+        id, duration: 15_000, description: SUPPORTS.isAndroid ? 'Update was not installed. The process was cancelled or an error occurred.' : 'Something went wrong during the update process!'
       })
     })
     IPC.emit('quit-and-install')
@@ -159,7 +159,7 @@
           <div>
             <strong class='d-block mb-5'>Nightly Build</strong>
             <div>This pre-release version may contain experimental features and bugs, use at your own risk. {!semver.prerelease(version) ? 'You are currently on a stable release, once updated you will not be able to downgrade.' : ''}</div>
-            <div class='mt-10' class:d-none={!isLesser}>It looks like you're upgrading from an earlier version, consider checking out the <span class='custom-link' use:click={() => IPC.emit('open', 'https://github.com/RockinChaos/Shiru/releases')}>previous release notes</span></div>
+            <div class='mt-10' class:d-none={!isLesser}>It looks like you're upgrading from an earlier version, consider checking out the <span class='custom-link' use:click={() => COMMON.openURI('https://github.com/RockinChaos/Shiru/releases')}>previous release notes</span></div>
           </div>
         </div>
       {/if}
@@ -167,11 +167,11 @@
         <Info class='mr-10 flex-shrink-0' size='2rem' />
         <div class='upgrade-notice'>
           <strong class='d-block mb-5'>Upgrade Notice</strong>
-          <span>It looks like you're upgrading from an earlier version, consider checking out the <span class='custom-link' use:click={() => IPC.emit('open', 'https://github.com/RockinChaos/Shiru/releases')}>previous release notes</span>.</span>
+          <span>It looks like you're upgrading from an earlier version, consider checking out the <span class='custom-link' use:click={() => COMMON.openURI('https://github.com/RockinChaos/Shiru/releases')}>previous release notes</span>.</span>
         </div>
       </div>
       <hr class='my-20' class:d-none={!isNightlyVersion && !isLesser}/>
-      <span>Consider <span class='custom-link' use:click={() => IPC.emit('open', 'https://github.com/sponsors/RockinChaos')}>donating on GitHub</span> to help support future Shiru development.</span>
+      <span>Consider <span class='custom-link' use:click={() => COMMON.openURI('https://github.com/sponsors/RockinChaos')}>donating on GitHub</span> to help support future Shiru development.</span>
       <hr class='my-20'/>
       {#if changelog?.entry?.body?.trim().length}
         <div class='whats-new'>
@@ -192,7 +192,7 @@
           </div>
         </div>
       {/if}
-      <div class='mt-10 mb-20'><span class='custom-link font-weight-bold d-flex' class:d-none={!changelog?.entry?.url} use:click={() => IPC.emit('open', changelog.entry.url)}>View on GitHub <ExternalLink class='ml-10' size='1.8rem' /></span></div>
+      <div class='mt-10 mb-20'><span class='custom-link font-weight-bold d-flex' class:d-none={!changelog?.entry?.url} use:click={() => COMMON.openURI(changelog.entry.url)}>View on GitHub <ExternalLink class='ml-10' size='1.8rem' /></span></div>
       <div class='mt-30 mb-20 font-italic' class:d-none={!SUPPORTS.isAndroid}>{deliveryText}</div>
     </div>
   {:catch e}

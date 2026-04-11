@@ -3,14 +3,13 @@
   import { writable } from 'simple-store-svelte'
   import { swapProfiles, alToken, malToken, profiles, sync } from '@/modules/settings.js'
   import { clientID } from '@/modules/myanimelist.js'
-  import { SUPPORTS } from '@/modules/support.js'
   import { click } from '@/modules/click.js'
   import { toast } from 'svelte-sonner'
   import SoftModal from '@/components/modals/SoftModal.svelte'
   import SmartImage from '@/components/visual/SmartImage.svelte'
   import { ClockAlert, LogOut, Plus, X } from 'lucide-svelte'
   import { modal } from '@/modules/navigation.js'
-  import { IPC } from '@/modules/bridge.js'
+  import { COMMON, ELECTRON } from '@/modules/bridge.js'
 
   const { reactive, init } = createListener(['pa-button', 'p-button', 'custom-switch', 'profile-safe-area'])
   init(true)
@@ -21,21 +20,21 @@
       currentProfile.set(alToken || malToken)
   })
 
-  function isAniProfile (profile) {
+  function isAniProfile(profile) {
     return profile.viewer?.data?.Viewer?.avatar
   }
 
-  function currentLogout () {
+  function currentLogout() {
     swapProfiles(null)
   }
 
-  function dropProfile (profile) {
+  function dropProfile(profile) {
     profiles.update(profiles => {
       return profiles.filter(p => p.viewer.data.Viewer.id !== profile.viewer?.data?.Viewer?.id)
     })
   }
 
-  function switchProfile (profile) {
+  function switchProfile(profile) {
     swapProfiles(profile)
   }
 
@@ -45,23 +44,32 @@
     else sync.value = sync.value.concat(profileID)
   }
 
-  function confirmAnilist () {
-    IPC.emit(SUPPORTS.isAndroid ? 'open' : 'open-auth', `https://anilist.co/api/v2/oauth/authorize?client_id=${atob('MjE3ODg=')}&response_type=token`) // Change redirect_url to shiru://alauth
+  function confirmAnilist() {
+    linkAccount(`https://anilist.co/api/v2/oauth/authorize?client_id=${atob('MjE3ODg=')}&response_type=token`) // Change redirect_url to shiru://alauth
   }
 
-  function confirmMAL () {
+  function confirmMAL() {
     const state = generateRandomString(10)
     const challenge = generateRandomString(50)
     sessionStorage.setItem(state, challenge)
-    IPC.emit(SUPPORTS.isAndroid ? 'open' : 'open-auth', `https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${clientID}&state=${state}&code_challenge=${challenge}&code_challenge_method=plain`) // Change redirect_url to shiru://malauth
+    linkAccount(`https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${clientID}&state=${state}&code_challenge=${challenge}&code_challenge_method=plain`) // Change redirect_url to shiru://malauth
   }
 
-  IPC.on('auth-canceled', () => {
-    toast.error('Login Canceled', {
-      description: 'The authorization window to log into your account was closed. If this was a mistake, please try logging in again.',
-      duration: 10000
+  async function linkAccount(uri) {
+    if (!uri) return
+    COMMON.linkAccount(uri).then(tokenUri => {
+      if (tokenUri) ELECTRON.handleProtocol(tokenUri)
+    }).catch(error => {
+      if (error.message?.match('common:failedAccount')) {
+        toast.error('Login Cancelled', {
+          description: 'The authorization window was closed. If this was a mistake, please try again.',
+          duration: 10_000
+        })
+      } else {
+        toast.error('Login Failed', { description: error.message, duration: 10_000 })
+      }
     })
-  })
+  }
 </script>
 <script>
   function close() {

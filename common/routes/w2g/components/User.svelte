@@ -1,6 +1,6 @@
 <script>
   import { click } from '@/modules/click.js'
-  import { IPC } from '@/modules/bridge.js'
+  import { COMMON } from '@/modules/bridge.js'
   import { ExternalLink } from 'lucide-svelte'
 
   /** @type {import("d:/Webdevelopment/shiru/common/modules/al").Viewer | {}} */
@@ -13,7 +13,7 @@
     {user?.name || 'Anonymous'}
   </div>
   {#if user?.name}
-    <span class='pointer text-primary d-flex align-items-center ml-auto' use:click={() => IPC.emit('open', (user?.avatar?.medium ? 'https://anilist.co/user/' : 'https://myanimelist.net/profile/') + user.name)}>
+    <span class='pointer text-primary d-flex align-items-center ml-auto' use:click={() => COMMON.openURI((user?.avatar?.medium ? 'https://anilist.co/user/' : 'https://myanimelist.net/profile/') + user.name)}>
       <ExternalLink size='2rem' />
     </span>
   {/if}

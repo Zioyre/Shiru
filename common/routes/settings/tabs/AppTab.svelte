@@ -2,7 +2,7 @@
   import { click } from '@/modules/click.js'
   import { cache, caches } from '@/modules/cache.js'
   import { SUPPORTS } from '@/modules/support.js'
-  import { IPC, VERSION } from '@/modules/bridge.js'
+  import { IPC, COMMON, ELECTRON } from '@/modules/bridge.js'
 
   async function importSettings () {
     try {
@@ -67,7 +67,7 @@
   export let settings
 
   function resetSettings () {
-    IPC.emit('set:angle', defaults.angle)
+    ELECTRON.setAngle(defaults.angle)
     cache.resetSettings()
   }
 
@@ -94,7 +94,7 @@
     const deviceInfo = JSON.parse(info)
     deviceInfo.appInfo = {
       version,
-      platform: VERSION.platform,
+      platform: COMMON.getPlatformInfo().platform,
       userAgent: navigator.userAgent,
       support: SUPPORTS,
       settings
@@ -108,7 +108,7 @@
 <h4 class='mb-10 font-weight-bold'>App Settings</h4>
 <SettingCard title='About This App' description='Not sure what a setting does? Leave it as default. Some settings require the app to be restarted to take effect.' class='d-lg-none'>
   <div class='d-flex flex-column'>
-    <span class='text-nowrap'>{version ? `v${version} ${semver.prerelease(version) ? `(Nightly)` : ``}` : ``} {platformMap[VERSION.platform] || 'dev'} {VERSION.arch || 'dev'} {capitalize(VERSION.session) || ''}</span>
+    <span class='text-nowrap'>{version ? `v${version} ${semver.prerelease(version) ? `(Nightly)` : ``}` : ``} {platformMap[COMMON.getPlatformInfo().platform] || 'dev'} {COMMON.getPlatformInfo().arch || 'dev'} {capitalize(COMMON.getPlatformInfo().session) || ''}</span>
     <button type='button' use:click={() => { toast('Update is downloading...', { description: 'This may take a moment, the update will be ready shortly.' }) }} class='btn btn-primary mt-5 d-none align-items-center justify-content-center' style='background-color: var(--tertiary-color-light);' class:d-flex={$updateState === 'downloading'}><span class='text-truncate'>Update Downloading...</span></button>
     <button type='button' use:click={() => { if ($updateState !== 'ready') updateState.set('ready'); else modal.open(modal.UPDATE_PROMPT) }} class='btn btn-primary mt-5 d-none align-items-center justify-content-center bg-success-light' class:d-flex={$updateState === 'ready' || $updateState === 'ignored' || $updateState === 'aborted'}><span class='text-truncate'>Update Available!</span></button>
   </div>
@@ -172,7 +172,7 @@
 </SettingCard>
 
 <h4 class='mb-10 font-weight-bold'>Debug Settings</h4>
-<SettingCard title='Logging Levels' description='Enable logging of specific parts of the app.{!SUPPORTS.isAndroid ? ` These logs are saved to ${VERSION.platform === `win32` ? `%appdata%` : `~/config`}/Shiru/logs/main.log.` : ``}'>
+<SettingCard title='Logging Levels' description='Enable logging of specific parts of the app.{!SUPPORTS.isAndroid ? ` These logs are saved to ${COMMON.getPlatformInfo().platform === `win32` ? `%appdata%` : `~/config`}/Shiru/logs/main.log.` : ``}'>
   <select class='form-control bg-dark mw-150 w-150 text-truncate' bind:value={$debugStore}>
     <option value='' selected>None</option>
     <option value='*'>All</option>
@@ -203,10 +203,10 @@
 </SettingCard>
 {#if !SUPPORTS.isAndroid}
   <SettingCard title='Open Torrent Devtools' description="Open devtools for the detached torrent process, this allows to inspect code execution and memory. DO NOT PASTE ANY CODE IN THERE, YOU'RE LIKELY BEING SCAMMED IF SOMEONE TELLS YOU TO!">
-    <button type='button' use:click={() => IPC.emit('torrent-devtools')} class='btn btn-primary d-flex align-items-center justify-content-center'><span class='text-truncate'>Open Devtools</span></button>
+    <button type='button' use:click={() => ELECTRON.openTorrentDevTools()} class='btn btn-primary d-flex align-items-center justify-content-center'><span class='text-truncate'>Open Devtools</span></button>
   </SettingCard>
   <SettingCard title='Open UI Devtools' description="Open devtools for the UI process, this allows to inspect media playback information, rendering performance and more. DO NOT PASTE ANY CODE IN THERE, YOU'RE LIKELY BEING SCAMMED IF SOMEONE TELLS YOU TO!">
-    <button type='button' use:click={() => IPC.emit('ui-devtools')} class='btn btn-primary d-flex align-items-center justify-content-center'><span class='text-truncate'>Open Devtools</span></button>
+    <button type='button' use:click={() => ELECTRON.openDevTools()} class='btn btn-primary d-flex align-items-center justify-content-center'><span class='text-truncate'>Open Devtools</span></button>
   </SettingCard>
 {/if}
 <ChangelogTab {version} class='d-lg-none' />

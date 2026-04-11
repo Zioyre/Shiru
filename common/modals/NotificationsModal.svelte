@@ -8,7 +8,7 @@
   import ErrorCard from '@/components/cards/ErrorCard.svelte'
   import SoftModal from '@/components/modals/SoftModal.svelte'
   import Helper from '@/modules/helper.js'
-  import { IPC } from '@/modules/bridge.js'
+  import { IPC, ELECTRON } from '@/modules/bridge.js'
   import { cache, caches } from '@/modules/cache.js'
   import { SUPPORTS } from '@/modules/support.js'
   import { settings } from '@/modules/settings.js'
@@ -24,7 +24,7 @@
   const debounceBatch = debounce(() => {
     if (debounceNotify) {
       cache.setEntry(caches.NOTIFICATIONS, 'notifications', notifications.value)
-      setTimeout(() => IPC.emit('notification-unread', hasUnreadNotifications.value), 50)
+      setTimeout(() => ELECTRON.setUnreadCount(hasUnreadNotifications.value), 50)
       debounceNotify = false
     }
   }, 1_500)
@@ -195,7 +195,7 @@
       scrollLocked = false
     })
   }
-  IPC.emit('notification-unread', hasUnreadNotifications.value)
+  ELECTRON.setUnreadCount(hasUnreadNotifications.value)
 </script>
 
 <SoftModal class='m-0 w-1000 mw-0 mh-full d-flex flex-column rounded bg-very-dark pt-0 py-30 pl-md-20 pr-md-30 mx-20 scrollbar-none' bind:showModal={$modal[modal.NOTIFICATIONS]} {close} id={modal.NOTIFICATIONS}>

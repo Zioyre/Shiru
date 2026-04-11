@@ -70,10 +70,10 @@ export default class App {
     this.mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
     if (development) this.mainWindow.once('ready-to-show', () => this.showAndFocus(true))
     else ipcMain.once('main-ready', () => this.showAndFocus(true)) // HACK: Prevents the window from being shown while it's still loading. This is nice for production as the window can't be moved without the elements being rendered.
-    ipcMain.on('torrent-devtools', () => this.webtorrentWindow.webContents.openDevTools({ mode: 'detach' }))
-    ipcMain.on('ui-devtools', ({ sender }) => sender.openDevTools({ mode: 'detach' }))
-    ipcMain.on('window-hide', () => this.mainWindow.hide())
-    ipcMain.on('window-show', () => this.showAndFocus())
+    ipcMain.on('electron:openTorrentDevTools', () => this.webtorrentWindow.webContents.openDevTools({ mode: 'detach' }))
+    ipcMain.on('electron:openDevTools', ({ sender }) => sender.openDevTools({ mode: 'detach' }))
+    ipcMain.on('electron:hideWindow', () => this.mainWindow.hide())
+    ipcMain.on('electron:showAndFocus', () => this.showAndFocus())
     ipcMain.on('minimize', () => this.mainWindow?.minimize())
     ipcMain.on('maximize', () => this.mainWindow?.isMaximized() ? this.mainWindow.unmaximize() : this.mainWindow.maximize())
     ipcMain.on('webtorrent-restart', () => this.setWebTorrentWindow(true))
@@ -107,19 +107,14 @@ export default class App {
     this.mainWindow.on('leave-full-screen', () => fullScreen(false))
 
     this.setWebTorrentWindow()
+
     this.mainWindow.on('closed', () => this.destroy())
-    ipcMain.on('close', () => { this.close = true; this.destroy() })
-
-    ipcMain.on('close-prompt', () => {
-      this.showAndFocus()
-      this.mainWindow.webContents.send('window-close')
-    })
-
+    ipcMain.once('electron:Exit', () => this.destroy())
     this.mainWindow.on('close', (event) => {
-      if (!this.close) {
+      if (!this.exit) {
         event.preventDefault()
         this.showAndFocus()
-        this.mainWindow.webContents.send('window-close')
+        this.mainWindow.webContents.send('electron:onExitIntent')
       }
     })
 
@@ -138,7 +133,7 @@ export default class App {
     this.createTray()
 
     fs.rmSync(this.imageDir, { recursive: true, force: true })
-    ipcMain.on('notification-unread', async (e, notificationCount) => this.setTrayIcon(notificationCount))
+    ipcMain.on('electron:setUnreadCount', async (e, notificationCount) => this.setTrayIcon(notificationCount))
     ipcMain.on('notification', async (e, opts) => {
       opts.icon = opts.icon ? ((await this.getImage(opts.id, opts.icon)) || this.icon) : this.icon
       let notification
@@ -210,10 +205,15 @@ export default class App {
     ipcMain.on('webtorrent-reload', () => { if (!this.mainWindow?.isDestroyed() && !this.webtorrentWindow?.isDestroyed()) this.webtorrentWindow.webContents.postMessage('webtorrent-reload', null) })
 
     let authWindow
-    ipcMain.on('open-auth', (event, url) => {
-      if (authWindow && !authWindow.isDestroyed()) authWindow.loadURL(url)
-      else {
-        const partitionName = 'open-auth'
+    ipcMain.handle('common:linkAccount', (event, url) => {
+      return new Promise((resolve, reject) => {
+        if (authWindow && !authWindow.isDestroyed()) {
+          authWindow.loadURL(url).catch(reject)
+          authWindow.once('close', () => reject(new Error('common:failedAccount')))
+          return
+        }
+        let settled = false
+        const partitionName = 'common:linkAccount'
         authWindow = new BrowserWindow({
           width: 480,
           height: 720,
@@ -229,8 +229,7 @@ export default class App {
           backgroundColor: '#17191c',
           autoHideMenuBar: true
         })
-
-        authWindow.webContents.setWindowOpenHandler(() => { return { action: 'deny' } })
+        authWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
         authWindow.webContents.on('did-finish-load', () => authWindow.show())
         authWindow.webContents.on('did-start-loading', () => authWindow.webContents.insertCSS
           (`
@@ -248,20 +247,21 @@ export default class App {
             }
           `))
         authWindow.on('close', () => {
-          this.mainWindow.webContents.send('auth-canceled')
+          if (settled) return
           session.fromPartition(partitionName).clearStorageData()
+          reject(new Error('common:failedAccount'))
         })
         authWindow.webContents.on('will-redirect', (event, url) => {
           if (url.startsWith('shiru:')) {
+            settled = true
             event.preventDefault()
             authWindow.destroy()
-            ipcMain.emit('handle-protocol', {}, url)
             session.fromPartition(partitionName).clearStorageData()
+            resolve(url)
           }
         })
-
-        authWindow.loadURL(url)
-      }
+        authWindow.loadURL(url).catch(reject)
+      })
     })
 
     ipcMain.on('quit-and-install', () => {
@@ -315,7 +315,7 @@ export default class App {
     if (this.destroyed) return
     this.destroyed = true
     this.updater.destroyed = true
-    this.close = true
+    this.exit = true
     this.mainWindow.hide()
     this.mainWindow.webContents?.closeDevTools?.()
     this.tray?.destroy()

@@ -1,7 +1,7 @@
 <script context='module'>
   import { version } from '@/routes/settings/SettingsPage.svelte'
   import { SUPPORTS } from '@/modules/support.js'
-  import { IPC } from '@/modules/bridge.js'
+  import { IPC, COMMON } from '@/modules/bridge.js'
   import { writable } from 'simple-store-svelte'
   import { settings } from '@/modules/settings.js'
   import { uniqueStore } from '@/modules/util.js'
@@ -144,7 +144,7 @@
     const anchor = event.composedPath().find(element => element.tagName === 'A')
     if (!anchor?.href) return
     event.preventDefault()
-    IPC.emit('open', anchor.href)
+    COMMON.openURI(anchor.href)
   }
 </script>
 <div class='changelog {$$restProps.class}' tabindex='-1' use:click={hrefListener}>{@html sanitize(body)}</div>

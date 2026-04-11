@@ -2,7 +2,7 @@ import { cache, caches } from '@/modules/cache.js'
 import { writable } from 'simple-store-svelte'
 import { defaults } from '@/modules/util.js'
 import { toast } from 'svelte-sonner'
-import { IPC } from '@/modules/bridge.js'
+import { ELECTRON, IPC } from '@/modules/bridge.js'
 import Debug from 'debug'
 const debug = Debug('ui:settings')
 
@@ -102,7 +102,7 @@ window.addEventListener('paste', ({ clipboardData }) => {
           } else if (malMatch) {
             protocol = `shiru://malanime/${malMatch[1]}`
           }
-          IPC.emit('handle-protocol', protocol)
+          ELECTRON.handleProtocol(protocol)
         }
       })
     }

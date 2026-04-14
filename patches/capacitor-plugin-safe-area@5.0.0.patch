@@ -1,22 +1,11 @@
 diff --git a/android/src/main/java/com/capacitor/safearea/SafeArea.java b/android/src/main/java/com/capacitor/safearea/SafeArea.java
-index 7ada9ada3471462ea6e02f2b1a9a9b05f75fc72a..0a7930ec52fad002e48ecda5bd0f8d9f08f179ad 100644
+index 4832c04b0bfd5905ae48ecac0d6dda3fada41256..22d323d5005cec5907b31a4d6b1b341043fbf3cb 100644
 --- a/android/src/main/java/com/capacitor/safearea/SafeArea.java
 +++ b/android/src/main/java/com/capacitor/safearea/SafeArea.java
-@@ -10,6 +10,9 @@ import com.getcapacitor.JSObject;
- import android.view.DisplayCutout;
- import android.view.View;
- import android.view.WindowInsets;
-+import androidx.core.view.DisplayCutoutCompat;
-+import androidx.core.view.ViewCompat;
-+import androidx.core.view.WindowInsetsCompat;
- 
- public class SafeArea {
-     private Bridge bridge;
-@@ -17,6 +20,58 @@ public class SafeArea {
-     public void setBridge(Bridge bridge) {
-         this.bridge = bridge;
+@@ -34,6 +34,55 @@ public class SafeArea {
+         return getSafeAreaInsets(false);
      }
-+	
+ 
 +    /**
 +     * Get only the display cutout insets (notch/camera cutout), excluding system bars
 +     */
@@ -28,14 +17,11 @@ index 7ada9ada3471462ea6e02f2b1a9a9b05f75fc72a..0a7930ec52fad002e48ecda5bd0f8d9f
 +        if (decor == null) {
 +            return this.result(0, 0, 0, 0);
 +        }
-+        int top = 0;
-+        int left = 0;
-+        int right = 0;
-+        int bottom = 0;
++        int top = 0, left = 0, right = 0, bottom = 0;
 +        // Display cutouts are only available on Android P (API 28) and above
 +        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
 +            try {
-+               WindowInsetsCompat insetsCompat = ViewCompat.getRootWindowInsets(decor);
++                WindowInsetsCompat insetsCompat = ViewCompat.getRootWindowInsets(decor);
 +                if (insetsCompat != null) {
 +                    DisplayCutoutCompat dc = insetsCompat.getDisplayCutout();
 +                    if (dc != null) {
@@ -59,7 +45,7 @@ index 7ada9ada3471462ea6e02f2b1a9a9b05f75fc72a..0a7930ec52fad002e48ecda5bd0f8d9f
 +                            left = displayCutout.getSafeInsetLeft();
 +                            right = displayCutout.getSafeInsetRight();
 +                            bottom = displayCutout.getSafeInsetBottom();
-+                       }
++                        }
 +                    }
 +                } catch (Throwable t) {
 +                    Log.i(SafeAreaPlugin.class.toString(), "Platform DisplayCutout failed: " + t);
@@ -68,23 +54,26 @@ index 7ada9ada3471462ea6e02f2b1a9a9b05f75fc72a..0a7930ec52fad002e48ecda5bd0f8d9f
 +        }
 +        return this.result(top, left, right, bottom);
 +    }
- 
-     public JSObject getSafeAreaInsets() {
-         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
++
+     /**
+      * 获取 SafeArea insets
+      * @param forceRefresh 是否强制刷新 WindowInsets（仅在旋转等场景使用，避免无限循环）
 diff --git a/android/src/main/java/com/capacitor/safearea/SafeAreaPlugin.java b/android/src/main/java/com/capacitor/safearea/SafeAreaPlugin.java
-index fcabc666d0dd5454f3a338ee26cc072749edc280..b4f8a904eed74a2abea1935b0e03144b2d1ad199 100644
+index c48fc6cc214dff4707e050613debb1e926b78e40..7c64e1b3b0673d2ab8abc192cdacf5de503f9df2 100644
 --- a/android/src/main/java/com/capacitor/safearea/SafeAreaPlugin.java
 +++ b/android/src/main/java/com/capacitor/safearea/SafeAreaPlugin.java
-@@ -118,6 +118,12 @@ public class SafeAreaPlugin extends Plugin {
-         notifyListeners("safeAreaChanged", ret);
+@@ -436,6 +436,14 @@ public class SafeAreaPlugin extends Plugin {
+         }
      }
  
++    @SuppressWarnings("unused")
 +    @PluginMethod
 +    public void getDisplayCutoutInsets(PluginCall call) {
 +        JSObject ret = new JSObject();
 +        ret.put(KEY_INSET, safeAreaInsets.getDisplayCutoutInsets());
 +        call.resolve(ret);
 +    }
- 
++
+     @SuppressWarnings("unused")
      @PluginMethod
      public void getSafeAreaInsets(PluginCall call) {

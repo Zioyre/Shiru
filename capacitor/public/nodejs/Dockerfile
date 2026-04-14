@@ -1,10 +1,10 @@
 FROM alpine:3.23 AS worker
 
 RUN apk add curl unzip
-RUN curl -L https://github.com/nodejs-mobile/nodejs-mobile/releases/download/v18.17.2/nodejs-mobile-v18.17.2-android.zip -o libnode.zip
+RUN curl -L https://github.com/nodejs-mobile/nodejs-mobile/releases/download/v18.20.4/nodejs-mobile-v18.20.4-android.zip -o libnode.zip
 RUN unzip libnode.zip
 
-FROM saschpe/android-ndk:34-jdk17.0.8_7-ndk25.2.9519653-cmake3.22.1
+FROM saschpe/android-ndk:37-jdk21.0.10_7-ndk30.0.14904198-cmake4.1.2
 
 COPY --from=worker ./nodejs-mobile* /opt/libnode
 ENV LIBNODE_PATH=/opt/libnode

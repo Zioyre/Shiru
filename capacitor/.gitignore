@@ -5,6 +5,7 @@
 .sourcemaps
 dist/
 *.gradle
+*.kotlin
 
 *.jks
 *.pepk

@@ -1,0 +1,28 @@
+diff --git a/android/src/main/java/com/alazizsoftwares/plugins/folderpicker/FolderPickerPlugin.java b/android/src/main/java/com/alazizsoftwares/plugins/folderpicker/FolderPickerPlugin.java
+index c1e0f1179afb2b2dcf9963172523118e918ce4d9..cd381a8976cf256fbc344c79ee8f64ea50cc0ab2 100644
+--- a/android/src/main/java/com/alazizsoftwares/plugins/folderpicker/FolderPickerPlugin.java
++++ b/android/src/main/java/com/alazizsoftwares/plugins/folderpicker/FolderPickerPlugin.java
+@@ -37,6 +37,7 @@ public class FolderPickerPlugin extends Plugin {
+ 
+     @PluginMethod
+     public void chooseFolder(PluginCall call) {
++		call.setKeepAlive(true);
+         savedCall = call;
+ 
+         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+@@ -50,12 +51,12 @@ public class FolderPickerPlugin extends Plugin {
+             Log.i("Directory Tree:", String.valueOf(uri));
+             DocumentFile documentFile = DocumentFile.fromTreeUri(getContext(), uri);
+             if (documentFile != null && documentFile.isDirectory()) {
+-                savedCall.success(toJSObject(uri.toString()));
++                savedCall.resolve(toJSObject(uri.toString()));
+             } else {
+-                savedCall.error("Invalid directory selected");
++                savedCall.reject("Invalid directory selected");
+             }
+         } else {
+-            savedCall.error("Folder selection canceled or failed");
++            savedCall.reject("Folder selection canceled or failed");
+         }
+     }
+ 

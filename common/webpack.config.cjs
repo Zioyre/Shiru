@@ -49,6 +49,14 @@ module.exports = (parentDir, alias = {}, aliasFields = 'browser', filename = 'ap
         resolve: {
           fullySpecified: false
         }
+      },
+      {
+        // required to prevent strict ESM extension errors from capacitor-nodejs
+        test: /\.js$/,
+        include: /capacitor-nodejs/,
+        resolve: {
+          fullySpecified: false
+        }
       }
     ]
   },

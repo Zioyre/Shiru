@@ -1,8 +1,9 @@
 const mode = process.env.NODE_ENV?.trim() || 'development'
+const isDev = mode === 'development'
 
 const config = {
-  appId: 'watch.shiru',
-  appName: 'Shiru',
+  appId: isDev ? 'watch.shiru.dev' : 'watch.shiru',
+  appName: isDev ? 'Shiru (Debug)' : 'Shiru',
   webDir: 'build',
   android: {
     buildOptions: {
@@ -23,6 +24,6 @@ const config = {
   }
 }
 
-if (mode === 'development') config.server.url = 'http://localhost:5001/index.html'
+if (isDev) config.server.url = 'http://localhost:5001/index.html'
 
 module.exports = config

@@ -139,7 +139,7 @@ export default class App {
       } else this.canNotify = true
     })
     LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
-      const url = notification.actionId === 'watch_anime' || notification.actionId === 'update_now' ? notification.notification.extra?.buttons?.[0]?.activation : notification.notification.extra?.buttons?.[1]?.activation
+      const url = ['watch_anime', 'update_now'].includes(notification.actionId) ? notification.notification.extra?.buttons?.[0]?.activation : notification.notification.extra?.buttons?.[notification.notification.extra?.buttons?.length - 1]?.activation
       if (url) {
         const checkInterval = setInterval(() => {
           if (this.handleNotify) {

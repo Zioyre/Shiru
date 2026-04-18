@@ -109,9 +109,6 @@ importers:
       '@capacitor/local-notifications':
         specifier: ^8.0.2
         version: 8.0.2(patch_hash=92e9cb4b54ea8684b0027c29ec61d24c886b142730b548ae3199be718f58a638)(@capacitor/core@8.3.0)
-      '@capacitor/status-bar':
-        specifier: ^8.0.2
-        version: 8.0.2(@capacitor/core@8.3.0)
       '@capawesome-team/capacitor-android-foreground-service':
         specifier: ^8.1.0
         version: 8.1.0(@capacitor/core@8.3.0)
@@ -386,11 +383,6 @@ packages:
 
   '@capacitor/local-notifications@8.0.2':
     resolution: {integrity: sha512-X7KE/I4ZutMTGVHNUyTjIugYcQEcHJRLks+TsPnOriuS+lo0geSTuaRln6zAZlJSSXSoVMSSzHexdSbIjR/8iw==}
-    peerDependencies:
-      '@capacitor/core': '>=8.0.0'
-
-  '@capacitor/status-bar@8.0.2':
-    resolution: {integrity: sha512-WXs8YB8B9eEaPZz+bcdY6t2nForF1FLoj/JU0Dl9RRgQnddnS98FEEyDooQhaY7wivr000j4+SC1FyeJkrFO7A==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
@@ -6326,10 +6318,6 @@ snapshots:
       '@capacitor/core': 8.3.0
 
   '@capacitor/local-notifications@8.0.2(patch_hash=92e9cb4b54ea8684b0027c29ec61d24c886b142730b548ae3199be718f58a638)(@capacitor/core@8.3.0)':
-    dependencies:
-      '@capacitor/core': 8.3.0
-
-  '@capacitor/status-bar@8.0.2(@capacitor/core@8.3.0)':
     dependencies:
       '@capacitor/core': 8.3.0
 

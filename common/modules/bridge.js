@@ -9,6 +9,9 @@ const commonDefaults = {
   linkAccount: noopAsyncVoid
 }
 const androidDefaults = {
+  hideStatusBar: noopVoid,
+  /** @param {'LIGHT' | 'DARK'} style */
+  setSystemStyle: (style = 'LIGHT') => {},
   requestFileAccess: noopAsyncBool,
   launchExternal: noopAsyncVoid
 }

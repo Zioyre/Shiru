@@ -1,7 +1,9 @@
 /* globals AndroidFullScreen, PictureInPicture */
 import { LocalNotifications } from '@capacitor/local-notifications'
-import { StatusBar, Style } from '@capacitor/status-bar'
+import { SystemBars, SystemBarType } from '@capacitor/core'
+import { Keyboard } from '@capacitor/keyboard'
 import { NodeJS } from 'capacitor-nodejs'
+import { App as Capacitor } from '@capacitor/app'
 
 import Debugger from './debugger.js'
 import Protocol from './protocol.js'
@@ -51,15 +53,17 @@ export default class App {
   ]
 
   constructor() {
-    StatusBar.hide()
-    StatusBar.setStyle({ style: Style.Dark })
-    StatusBar.setOverlaysWebView({ overlay: true })
     this.updateOrientationInsets()
     screen.orientation.addEventListener('change', this.updateOrientationInsets)
     Capacitor.addListener('appStateChange', (state) => {
       if (state.isActive) this.updateOrientationInsets()
     })
 
+    SystemBars.hide({ bar: SystemBarType.StatusBar })
+    Keyboard.addListener('keyboardWillHide', () => SystemBars.hide({ bar: SystemBarType.StatusBar }))
+    Capacitor.addListener('appStateChange', (state) => {
+      if (state.isActive) SystemBars.hide({ bar: SystemBarType.StatusBar })
+    })
 
     IPC.on('portRequest', async () => {
       window.port = {

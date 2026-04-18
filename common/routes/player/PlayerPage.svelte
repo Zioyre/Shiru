@@ -202,8 +202,7 @@
     } else if (orientationLockable) {
       if (SUPPORTS.isAndroid) {
         window.AndroidFullScreen?.showSystemUI()
-        window.Capacitor.Plugins.StatusBar.setOverlaysWebView({overlay: true})
-        window.Capacitor.Plugins.StatusBar.hide()
+        ANDROID.hideStatusBar()
       }
       screen.orientation.unlock()
     }

@@ -1,7 +1,9 @@
-import { App } from '@capacitor/app'
+import { App as Capacitor } from '@capacitor/app'
 import { Browser } from '@capacitor/browser'
 import { IntentUri } from 'capacitor-intent-uri'
 import { Filesystem } from '@capacitor/filesystem'
+import { keyboardVisible } from '../main/util.js'
+import { SystemBars, SystemBarsStyle, SystemBarType } from '@capacitor/core'
 import { ForegroundService, Importance, ServiceType } from '@capawesome-team/capacitor-android-foreground-service'
 import { indexedDB as fakeIndexedDB } from 'fake-indexeddb'
 import EventEmitter from 'events'
@@ -44,7 +46,7 @@ ForegroundService.createNotificationChannel({
 
 window.IPC = IPC
 window.common = {
-  getAppVersion: async () => (await App.getInfo())?.version,
+  getAppVersion: async () => (await Capacitor.getInfo())?.version,
   getPlatformInfo: () => ({
     platform: globalThis.cordova?.platformId,
     arch: navigator.platform?.split(' ')?.[1]
@@ -53,6 +55,16 @@ window.common = {
   linkAccount: async (uri) => Browser.open({ url: uri })
 }
 window.android = {
+  /** Hides the status bar if the keyboard is not visible. */
+  hideStatusBar: () => {
+    if (!keyboardVisible) SystemBars.hide({ bar: SystemBarType.StatusBar })
+  },
+  /**
+   * Sets the system bar icon and text style to light or dark.
+   *
+   * @param {'LIGHT' | 'DARK'} style The style to apply to the system bars.
+   */
+  setSystemStyle: (style) => SystemBars.setStyle({ style: style === 'LIGHT' ? SystemBarsStyle.Light : SystemBarsStyle.Dark }),
   /**
    * Requests "All Files" access permission when needed, resolves with granted `true` if access is granted, or `false` if denied.
    *
@@ -63,7 +75,7 @@ window.android = {
     else if (window.NativeBridge?.hasAllFilesAccess()) return { granted: true }
     window.NativeBridge?.requestAllFilesAccess()
     return new Promise((resolve) => {
-      const listener = App.addListener('appStateChange', (state) => {
+      const listener = Capacitor.addListener('appStateChange', (state) => {
         if (state.isActive) {
           listener.remove()
           if (window.NativeBridge?.hasAllFilesAccess()) resolve({ granted: true })

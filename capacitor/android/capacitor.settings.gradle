@@ -23,8 +23,6 @@ project(':capacitor-keyboard').projectDir = new File('../../node_modules/.pnpm/@
 include ':capacitor-local-notifications'
 project(':capacitor-local-notifications').projectDir = new File('../../node_modules/.pnpm/@capacitor+local-notificati_41a71396d26ebaec6202601871f020eb/node_modules/@capacitor/local-notifications/android')
 
-include ':capacitor-status-bar'
-project(':capacitor-status-bar').projectDir = new File('../../node_modules/.pnpm/@capacitor+status-bar@8.0.2_@capacitor+core@8.3.0/node_modules/@capacitor/status-bar/android')
 
 include ':capawesome-team-capacitor-android-foreground-service'
 project(':capawesome-team-capacitor-android-foreground-service').projectDir = new File('../../node_modules/.pnpm/@capawesome-team+capacitor-_eb69487e5634a2c1c2ee50745d9c3410/node_modules/@capawesome-team/capacitor-android-foreground-service/android')

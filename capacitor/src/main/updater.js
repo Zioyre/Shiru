@@ -1,7 +1,7 @@
 import ApkUpdater from 'cordova-plugin-apkupdater'
 import { IPC } from '../preload/preload.js'
 import { development } from './util.js'
-import { App } from '@capacitor/app'
+import { App as Capacitor } from '@capacitor/app'
 import semver from 'semver'
 import YAML from 'yaml'
 
@@ -43,7 +43,7 @@ export default class Updater {
 
   /** Retrieves and stores app version information and device architecture. */
   async getInfo() {
-    const appInfo = await App.getInfo()
+    const appInfo = await Capacitor.getInfo()
     this.build = appInfo.build
     this.currentVersion = appInfo.version
     this.versionCode = await this.parseABI()
@@ -227,7 +227,7 @@ export default class Updater {
             IPC.emit('update-progress', progress.progress ?? 0)
           }
         }, () => {
-          const listener = App.addListener('appStateChange', (state) => {
+          const listener = Capacitor.addListener('appStateChange', (state) => {
             if (state.isActive) {
               listener.remove()
               setTimeout(() => this.updateAborted(true), 1_500).unref?.()

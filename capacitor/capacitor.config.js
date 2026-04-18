@@ -14,10 +14,23 @@ const config = {
     webContentsDebuggingEnabled: true
   },
   plugins: {
-    SplashScreen: { launchShowDuration: 0 },
-    CapacitorHttp: { enabled: true },
-    CapacitorNodeJS: { nodeDir: 'nodejs' },
-    LocalNotifications: { sound: 'ic_notification.wav' }
+    SplashScreen: {
+      launchShowDuration: 0
+    },
+    CapacitorHttp: {
+      enabled: true
+    },
+    CapacitorNodeJS: {
+      nodeDir: 'nodejs'
+    },
+    LocalNotifications: {
+      sound: 'ic_notification.wav'
+    },
+    SystemBars: {
+      insetsHandling: 'css',
+      style: 'DARK',
+      hidden: false
+    }
   },
   server: {
     cleartext: true

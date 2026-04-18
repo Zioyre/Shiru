@@ -1,4 +1,5 @@
 import { SUPPORTS } from '@/modules/support.js'
+import { ANDROID } from '@/modules/bridge.js'
 
 let lastTapElement = null
 let lastTapTarget = null
@@ -43,7 +44,7 @@ document.addEventListener('selectionchange', () => {
 })
 
 if (SUPPORTS.isAndroid) {
-  document.addEventListener('touchstart', () => window.Capacitor.Plugins.StatusBar.hide(), { passive: true })
+  document.addEventListener('touchstart', ANDROID.hideStatusBar, { passive: true })
 } else {
   // don't focus what we can't even tab to, fixes function keys being used to focus.
   document.addEventListener('focusin', (e) => {

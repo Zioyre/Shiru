@@ -21,7 +21,6 @@ dependencies {
     implementation project(':capacitor-folder-picker')
     implementation project(':capacitor-intent-uri')
     implementation project(':capacitor-nodejs')
-    implementation project(':capacitor-plugin-safe-area')
     implementation "net.lingala.zip4j:zip4j:2.11.5"
     implementation "androidx.core:core:1.6.0"
     implementation "com.scottyab:rootbeer-lib:0.1.0"

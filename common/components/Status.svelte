@@ -30,9 +30,9 @@
     height: var(--statusbar-height);
   }
   .status-bar.offline-safe {
-    height: calc(var(--statusbar-height) + var(--safe-area-top));
+    height: calc(var(--statusbar-height) + env(safe-area-inset-top, 0));
   }
   .status-bar.offline-safe.padding-safe {
-    padding-top: var(--safe-area-top);
+    padding-top: env(safe-area-inset-top, 0);
   }
 </style>

@@ -14,8 +14,8 @@
   --sidebar-width: 0px;
   --navbar-height: 7rem;
   --statusbar-height: 28px;
-  --safe-area-top: 0px;
-  --safe-area-left: 0px;
+  --notch-inset-right: 0px;
+  --navigation-inset-right: 0px;
 
   --accent-color: #e5204c;
   --highlight-color: #FFFFFF !important;
@@ -608,13 +608,22 @@ a[href]:active, button:not([disabled], .not-reactive):active:not([data-sonner-to
 }
 
 .mt-safe-area {
-  margin-top: var(--safe-area-top) !important;
+  margin-top: env(safe-area-inset-top, 0) !important;
+}
+.mb-safe-area {
+  margin-bottom: env(safe-area-inset-bottom, 0) !important;
 }
 .pt-safe-area {
-  padding-top: var(--safe-area-top) !important;
+  padding-top: env(safe-area-inset-top, 0) !important;
 }
 .pl-safe-area {
-  padding-left: var(--safe-area-left) !important;
+  padding-left: env(safe-area-inset-left, 0) !important;
+}
+.pr-notch-area {
+  padding-right: var(--notch-inset-right, 0) !important;
+}
+.pr-navigation-area {
+  padding-right: var(--navigation-inset-right, 0) !important;
 }
 
 .h-10 {
@@ -632,7 +641,7 @@ body {
   scroll-behavior: smooth;
   overscroll-behavior: none;
   user-select: none;
-  font-family: 'Nunito Variable'
+  font-family: 'Nunito Variable';
 }
 
 .font-weight-very-bold {

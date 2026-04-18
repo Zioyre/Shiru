@@ -41,7 +41,6 @@
       "bittorrent-tracker": "^11.2.2"
     },
     "patchedDependencies": {
-      "capacitor-plugin-safe-area@5.0.0": "patches/capacitor-plugin-safe-area@5.0.0.patch",
       "@capacitor/local-notifications": "patches/@capacitor__local-notifications.patch",
       "capacitor-folder-picker": "patches/capacitor-folder-picker.patch",
       "@capacitor/android": "patches/@capacitor__android.patch",

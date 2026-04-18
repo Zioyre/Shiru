@@ -125,6 +125,12 @@
   }
 }
 
+@media (max-width: 768px) {
+  .p-md-d-safe-area {
+    padding: env(safe-area-inset-top, 0) var(--navigation-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0) !important;
+  }
+}
+
 @media (min-width: 769px) {
   .viewport-md-4-3 {
     width: 80vw !important;

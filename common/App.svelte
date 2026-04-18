@@ -66,7 +66,7 @@
 
 <MinimizeModal />
 <UpdateModal />
-<div class='page-wrapper with-transitions bg-dark position-relative pl-safe-area' data-sidebar-type='overlayed-all'>
+<div class='page-wrapper with-transitions bg-dark position-relative pl-safe-area pr-navigation-area' data-sidebar-type='overlayed-all'>
   <Status />
   <Menubar />
   <Sidebar />
@@ -83,7 +83,7 @@
 
 <style>
   .page-wrapper {
-    height: calc(100% - var(--navbar-height)) !important;
+    height: calc(100% - var(--navbar-height) - env(safe-area-inset-bottom, 0)) !important;
   }
   .content-wrapper {
     will-change: width;

@@ -2429,7 +2429,7 @@
     }
     @media (orientation: portrait) {
       .top  {
-        padding-top: max(var(--safe-area-top), env(safe-area-inset-top, 0)) !important;
+        padding-top: env(safe-area-inset-top, 0) !important;
       }
     }
     .middle .ctrl {

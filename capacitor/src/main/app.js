@@ -1,7 +1,6 @@
 /* globals AndroidFullScreen, PictureInPicture */
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { StatusBar, Style } from '@capacitor/status-bar'
-import { SafeArea } from 'capacitor-plugin-safe-area'
 import { NodeJS } from 'capacitor-nodejs'
 
 import Debugger from './debugger.js'
@@ -55,10 +54,12 @@ export default class App {
     StatusBar.hide()
     StatusBar.setStyle({ style: Style.Dark })
     StatusBar.setOverlaysWebView({ overlay: true })
+    this.updateOrientationInsets()
+    screen.orientation.addEventListener('change', this.updateOrientationInsets)
+    Capacitor.addListener('appStateChange', (state) => {
+      if (state.isActive) this.updateOrientationInsets()
+    })
 
-    this.updateSafeInsets()
-    SafeArea.addListener('safeAreaChanged', this.updateSafeInsets)
-    screen.orientation.addEventListener('change', this.updateSafeInsets)
 
     IPC.on('portRequest', async () => {
       window.port = {
@@ -132,14 +133,9 @@ export default class App {
     })
   }
 
-  /**
-   * Updates CSS variables with safe area insets from the device.
-   * @returns {Promise<void>}
-   */
-  async updateSafeInsets() {
-    const { insets } = await SafeArea.getDisplayCutoutInsets()
-    for (const [key, value] of Object.entries(insets)) {
-      document.documentElement.style.setProperty(`--safe-area-${key}`, `${value}px`)
-    }
+  /** Updates navigation and notch inset variables based on screen orientation. */
+  updateOrientationInsets() {
+    document.documentElement.style.setProperty('--notch-inset-right', screen.orientation.type === 'landscape-primary' ? '0px' : 'env(safe-area-inset-right)')
+    document.documentElement.style.setProperty('--navigation-inset-right', screen.orientation.type === 'landscape-secondary' ? '0px' : 'env(safe-area-inset-right)')
   }
 }

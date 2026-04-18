@@ -62,7 +62,7 @@
   $: checkInvite(joinText)
 </script>
 
-<div class='d-flex h-full align-items-center flex-column px-md-20 overflow-y-auto scroll-container' class:pt-safe-area={!$status.match(/offline/i)}>
+<div class='d-flex h-full align-items-center flex-column px-md-20 overflow-y-auto' class:pt-safe-area={!$status.match(/offline/i)}>
   {#if !$state}
     <div class='font-scale-50 font-weight-bold pt-20 mt-20 root'>Watch Together</div>
     <div class='d-flex flex-row flex-wrap justify-content-center align-items-center h-auto mb-20 pb-20 root position-relative w-full' class:h-full={!SUPPORTS.isAndroid}>

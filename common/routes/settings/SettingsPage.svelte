@@ -150,65 +150,51 @@
     <div class='mt-75 mt-lg-0 w-full overflow-y-auto overflow-y-md-hidden' class:status-transition={statusTransition} class:pt-28px={!SUPPORTS.isAndroid && !$status.match(/offline/i)} class:pt-lg-28px={SUPPORTS.isAndroid && !$status.match(/offline/i)} class:pt-safe-area={SUPPORTS.isAndroid && !$status.match(/offline/i)}>
       <Tab>
         <div class='root h-full w-full overflow-y-md-auto p-20 pt-5'>
-          <div class='scroll-container'>
-            <div class='page pb-100'>
-              <PlayerTab bind:settings={$settings} />
-            </div>
+          <div class='page pb-100'>
+            <PlayerTab bind:settings={$settings} />
           </div>
         </div>
       </Tab>
       <Tab>
         <div class='root h-full w-full overflow-y-md-auto p-20 pt-5'>
-          <div class='scroll-container'>
-            <div class='page pb-100'>
-              <ClientTab bind:settings={$settings} />
-            </div>
+          <div class='page pb-100'>
+            <ClientTab bind:settings={$settings} />
           </div>
         </div>
       </Tab>
       <Tab>
         <div class='root h-full w-full overflow-y-md-auto p-20 pt-15'>
-          <div class='scroll-container'>
-            <div class='page pb-100'>
-              <TorrentPage />
-            </div>
+          <div class='page pb-100'>
+            <TorrentPage />
           </div>
         </div>
       </Tab>
       <Tab>
         <div class='root h-full w-full overflow-y-md-auto p-20 pt-5'>
-          <div class='scroll-container'>
-            <div class='page pb-100'>
-              <InterfaceTab bind:settings={$settings} />
-            </div>
+          <div class='page pb-100'>
+            <InterfaceTab bind:settings={$settings} />
           </div>
         </div>
       </Tab>
       <Tab>
         <div class='root h-full w-full overflow-y-md-auto p-20 pt-5'>
-          <div class='scroll-container'>
-            <div class='page pb-100'>
-              <ExtensionTab bind:settings={$settings} />
-            </div>
+          <div class='page pb-100'>
+            <ExtensionTab bind:settings={$settings} />
           </div>
         </div>
       </Tab>
       <Tab/> <!-- Skip Profile Tab -->
       <Tab>
         <div class='root h-full w-full overflow-y-md-auto p-20 pt-5'>
-          <div class='scroll-container'>
-            <div class='page pb-100'>
-              <AppTab {version} bind:settings={$settings} />
-            </div>
+          <div class='page pb-100'>
+            <AppTab {version} bind:settings={$settings} />
           </div>
         </div>
       </Tab>
       <Tab>
         <div class='root h-full w-full overflow-y-md-auto p-20 pt-5'>
-          <div class='scroll-container'>
-            <div class='page pb-100'>
-              <ChangelogTab {version} />
-            </div>
+          <div class='page pb-100'>
+            <ChangelogTab {version} />
           </div>
         </div>
       </Tab>

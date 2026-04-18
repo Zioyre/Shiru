@@ -2,7 +2,6 @@
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { SafeArea } from 'capacitor-plugin-safe-area'
-import { Keyboard } from '@capacitor/keyboard'
 import { NodeJS } from 'capacitor-nodejs'
 
 import Debugger from './debugger.js'
@@ -89,45 +88,6 @@ export default class App {
     })
     IPC.on('webtorrent-reload', () => NodeJS.send({eventName: 'webtorrent-reload', args: []}))
 
-    // HACK: recenter and focus active elements (causes keyboardWillShow to trigger)
-    window.addEventListener('orientationchange', () => {
-      const active = document.activeElement
-      if (active && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
-        active.blur()
-        requestAnimationFrame(() => setTimeout(() => active.focus(), 800))
-      }
-    })
-    Keyboard.addListener('keyboardWillHide', () => {
-      if (this.kbLastScrollY != null && this.kbScrollContainer) {
-        const scrollableContainer = this.keyboardScrollParent(this.kbScrollContainer)
-        if (scrollableContainer) scrollableContainer.scrollTo({ top: this.kbLastScrollY, behavior: 'smooth' })
-        const _scrollContainer = this.kbScrollContainer
-        this.kbHideTimeout = setTimeout(() => _scrollContainer.style.paddingBottom = '', 250)
-        this.kbLastScrollY = null
-        this.kbScrollContainer = null
-      }
-    })
-    Keyboard.addListener('keyboardWillShow', info => {
-      const active = document.activeElement
-      if (!active || !['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) return
-      this.kbScrollContainer = active.closest('.scroll-container')
-      if (!this.kbScrollContainer) return
-      const scrollableContainer = this.keyboardScrollParent(this.kbScrollContainer)
-      if (!scrollableContainer) return
-      const rect = active.getBoundingClientRect()
-      const visibleArea = window.innerHeight - info.keyboardHeight
-      if (rect.bottom > visibleArea) {
-        if (this.kbHideTimeout) {
-          clearTimeout(this.kbHideTimeout)
-          this.kbHideTimeout = null
-        }
-        this.kbLastScrollY = scrollableContainer.scrollTop
-        this.kbScrollContainer.style.paddingBottom = (info.keyboardHeight) + 'px'
-        const visibleHeight = visibleArea
-        if (rect.bottom > visibleHeight) scrollableContainer.scrollBy({ top: (rect.bottom - visibleHeight), behavior: 'smooth' })
-      }
-    })
-
     LocalNotifications.registerActionTypes({ types: this.notifyTypes })
     LocalNotifications.checkPermissions().then(value => {
       if (value?.display !== 'granted') {
@@ -181,20 +141,5 @@ export default class App {
     for (const [key, value] of Object.entries(insets)) {
       document.documentElement.style.setProperty(`--safe-area-${key}`, `${value}px`)
     }
-  }
-
-  /**
-   * Finds the closest scrollable parent element of a given container.
-   *
-   * @param {HTMLElement} container - Element to start searching from.
-   * @returns {HTMLElement|null} Closest scrollable parent, or null if none found.
-   */
-  keyboardScrollParent(container) {
-    let current = container
-    while (current) {
-      if (/(auto|scroll)/.test(window.getComputedStyle(current)?.overflowY)) return current
-      current = current.parentElement
-    }
-    return null
   }
 }

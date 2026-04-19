@@ -18,7 +18,6 @@ dependencies {
     implementation project(':capacitor-local-notifications')
     implementation project(':capacitor-splash-screen')
     implementation project(':capawesome-team-capacitor-android-foreground-service')
-    implementation project(':capacitor-folder-picker')
     implementation project(':capacitor-intent-uri')
     implementation project(':capacitor-nodejs')
     implementation "net.lingala.zip4j:zip4j:2.11.5"

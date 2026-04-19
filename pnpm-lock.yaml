@@ -16,9 +16,6 @@ patchedDependencies:
   '@capacitor/local-notifications':
     hash: 92e9cb4b54ea8684b0027c29ec61d24c886b142730b548ae3199be718f58a638
     path: patches/@capacitor__local-notifications.patch
-  capacitor-folder-picker:
-    hash: f775a4ad203190c26b8bd4764e56ae8328cccac81315db8cb4853ebc3e833227
-    path: patches/capacitor-folder-picker.patch
   lucide-svelte@0.455.0:
     hash: 0609c957d625c84712d92a612c0fe92d6b06ae161e98c32f1b6b5694e5ff66ed
     path: patches/lucide-svelte@0.455.0.patch
@@ -115,9 +112,6 @@ importers:
       '@capawesome-team/capacitor-android-foreground-service':
         specifier: ^8.1.0
         version: 8.1.0(@capacitor/core@8.3.1)
-      capacitor-folder-picker:
-        specifier: ^0.0.2
-        version: 0.0.2(patch_hash=f775a4ad203190c26b8bd4764e56ae8328cccac81315db8cb4853ebc3e833227)(@capacitor/core@8.3.1)
       capacitor-intent-uri:
         specifier: ^0.0.2
         version: 0.0.2(@capacitor/core@8.3.1)
@@ -1812,11 +1806,6 @@ packages:
 
   caniuse-lite@1.0.30001761:
     resolution: {integrity: sha512-JF9ptu1vP2coz98+5051jZ4PwQgd2ni8A+gYSN7EA7dPKIMf0pDlSUxhdmVOaV3/fYK5uWBkgSXJaRLr4+3A6g==}
-
-  capacitor-folder-picker@0.0.2:
-    resolution: {integrity: sha512-mlRCh3+1DMf9yd8UIOQI3WJD+0bSI2rguJ+6I0D9ipTfPe/T/ogYbLzVOpxq1EV0QJ3V6aLxom5Wt3VFwsZ3pw==}
-    peerDependencies:
-      '@capacitor/core': ^5.0.0
 
   capacitor-intent-uri@0.0.2:
     resolution: {integrity: sha512-tJGOZNua82Ib5sgmBt/s/5R+zVoSwBJOc8A1TxJ0Na3ckiFqLv3lLWSfotpCvh9f8203jRlTwDyGaiBPLgQ8Cw==}
@@ -8314,10 +8303,6 @@ snapshots:
   camelcase@5.3.1: {}
 
   caniuse-lite@1.0.30001761: {}
-
-  capacitor-folder-picker@0.0.2(patch_hash=f775a4ad203190c26b8bd4764e56ae8328cccac81315db8cb4853ebc3e833227)(@capacitor/core@8.3.1):
-    dependencies:
-      '@capacitor/core': 8.3.1
 
   capacitor-intent-uri@0.0.2(@capacitor/core@8.3.1):
     dependencies:

@@ -7,13 +7,15 @@ import android.webkit.ServiceWorkerClient;
 import android.webkit.ServiceWorkerController;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
-import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
+
+import watch.shiru.plugin.FileManager;
 
 public class MainActivity extends BridgeActivity {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
+    registerPlugin(FileManager.class);
 
     super.onCreate(savedInstanceState);
 
@@ -25,8 +27,6 @@ public class MainActivity extends BridgeActivity {
               | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
       return insets;
     });
-
-    bridge.getWebView().addJavascriptInterface(new NativeBridge(this), "NativeBridge");
 
     ServiceWorkerController swController = ServiceWorkerController.getInstance();
     swController.setServiceWorkerClient(new ServiceWorkerClient() {

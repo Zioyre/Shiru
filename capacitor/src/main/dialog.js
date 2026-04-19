@@ -1,5 +1,5 @@
-import { FolderPicker } from 'capacitor-folder-picker'
 import { IPC } from '../preload/preload.js'
+import { FileManager } from './plugin.js'
 import { toast } from 'svelte-sonner'
 
 export default class Dialog {
@@ -7,8 +7,9 @@ export default class Dialog {
 
   constructor() {
     IPC.on('dialog', async () => {
-      const result = await FolderPicker.chooseFolder()
-      const normalizedPath = decodeURIComponent(result.path)
+      const chosenPath = await FileManager.pickFolder().catch(() => null)
+      if (!chosenPath) return
+      const normalizedPath = decodeURIComponent(chosenPath)
       const [, uri, ...path] = normalizedPath.split(':')
       const [, , app, subpath, type, ...rest] = uri.split('/')
 

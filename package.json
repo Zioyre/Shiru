@@ -42,7 +42,6 @@
     },
     "patchedDependencies": {
       "@capacitor/local-notifications": "patches/@capacitor__local-notifications.patch",
-      "capacitor-folder-picker": "patches/capacitor-folder-picker.patch",
       "@capacitor/android": "patches/@capacitor__android.patch",
       "lucide-svelte@0.455.0": "patches/lucide-svelte@0.455.0.patch",
       "rfdc": "patches/rfdc.patch",

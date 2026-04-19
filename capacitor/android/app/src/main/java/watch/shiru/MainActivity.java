@@ -14,6 +14,7 @@ public class MainActivity extends BridgeActivity {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
+
     super.onCreate(savedInstanceState);
 
     // Fixes older Android behavior where status bar prevents true overlay ensuring WebView can render behind the status bar correctly.
@@ -27,19 +28,15 @@ public class MainActivity extends BridgeActivity {
 
     bridge.getWebView().addJavascriptInterface(new NativeBridge(this), "NativeBridge");
 
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-      ServiceWorkerController swController = null;
-      swController = ServiceWorkerController.getInstance();
-
-      swController.setServiceWorkerClient(new ServiceWorkerClient() {
-        @Override
-        public WebResourceResponse shouldInterceptRequest(WebResourceRequest request) {
-          if (request.getUrl().toString().contains("index.html")) {
-            request.getRequestHeaders().put("Accept", "text/html");
-          }
-          return bridge.getLocalServer().shouldInterceptRequest(request);
+    ServiceWorkerController swController = ServiceWorkerController.getInstance();
+    swController.setServiceWorkerClient(new ServiceWorkerClient() {
+      @Override
+      public WebResourceResponse shouldInterceptRequest(WebResourceRequest request) {
+        if (request.getUrl().toString().contains("index.html")) {
+          request.getRequestHeaders().put("Accept", "text/html");
         }
-      });
-    }
+        return bridge.getLocalServer().shouldInterceptRequest(request);
+      }
+    });
   }
 }

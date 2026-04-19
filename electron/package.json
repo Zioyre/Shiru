@@ -17,13 +17,13 @@
     "publish": "npm run web:build && electron-builder -p always"
   },
   "devDependencies": {
-    "@electron/notarize": "^3.1.0",
+    "@electron/notarize": "^3.1.1",
     "common": "workspace:*",
     "client": "workspace:*",
     "electron": "39.8.7",
-    "electron-builder": "^26.0.12",
+    "electron-builder": "^26.8.1",
     "electron-log": "^5.4.3",
-    "electron-updater": "^6.8.3"
+    "electron-updater": "^6.8.4"
   },
   "dependencies": {
     "@paymoapp/electron-shutdown-handler": "^1.1.2",

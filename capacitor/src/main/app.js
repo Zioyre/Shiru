@@ -1,6 +1,7 @@
 /* globals AndroidFullScreen, PictureInPicture */
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { SystemBars, SystemBarType } from '@capacitor/core'
+import { SplashScreen } from '@capacitor/splash-screen'
 import { Keyboard } from '@capacitor/keyboard'
 import { NodeJS } from 'capacitor-nodejs'
 import { App as Capacitor } from '@capacitor/app'
@@ -64,6 +65,7 @@ export default class App {
     Capacitor.addListener('appStateChange', (state) => {
       if (state.isActive) SystemBars.hide({ bar: SystemBarType.StatusBar })
     })
+    IPC.once('main-ready', async () => setTimeout(() => SplashScreen.hide({ fadeOutDuration: 200 }), 150).unref?.())
 
     IPC.on('portRequest', async () => {
       window.port = {

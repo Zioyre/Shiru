@@ -82,7 +82,7 @@
     ],
     "mac": {
       "artifactName": "${os}-${productName}-v${version}.${ext}",
-      "singleArchFiles": "node_modules/+(register-scheme|utp-native|fs-native-extensions)/**",
+      "singleArchFiles": "**/node_modules/+(register-scheme|utp-native|fs-native-extensions)/**",
       "category": "public.app-category.video",
       "darkModeSupport": true,
       "icon": "buildResources/icon.icns",

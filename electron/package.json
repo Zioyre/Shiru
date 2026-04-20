@@ -21,7 +21,7 @@
     "common": "workspace:*",
     "client": "workspace:*",
     "electron": "39.8.7",
-    "electron-builder": "^26.8.1",
+    "electron-builder": "^26.0.12",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.8.4"
   },
@@ -82,7 +82,7 @@
     ],
     "mac": {
       "artifactName": "${os}-${productName}-v${version}.${ext}",
-      "singleArchFiles": "**/node_modules/+(register-scheme|utp-native|fs-native-extensions)/**",
+      "singleArchFiles": "node_modules/+(register-scheme|utp-native|fs-native-extensions)/**",
       "category": "public.app-category.video",
       "darkModeSupport": true,
       "icon": "buildResources/icon.icns",

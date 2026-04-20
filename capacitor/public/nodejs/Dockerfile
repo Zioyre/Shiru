@@ -2,9 +2,9 @@ FROM alpine:3.23 AS worker
 
 RUN apk add curl unzip
 RUN curl -L https://github.com/nodejs-mobile/nodejs-mobile/releases/download/v18.20.4/nodejs-mobile-v18.20.4-android.zip -o libnode.zip
-RUN unzip libnode.zip
+RUN mkdir /nodejs-mobile-v18.20.4-android && unzip libnode.zip -d /nodejs-mobile-v18.20.4-android
 
-FROM saschpe/android-ndk:37.0-jdk21.0.10_7-ndk30.0.14904198-cmake4.1.2
+FROM saschpe/android-ndk:35-jdk21.0.6_7-ndk26.3.11579264-cmake3.31.1
 
 USER root
 

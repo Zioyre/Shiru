@@ -4,7 +4,7 @@ RUN apk add curl unzip
 RUN curl -L https://github.com/nodejs-mobile/nodejs-mobile/releases/download/v18.20.4/nodejs-mobile-v18.20.4-android.zip -o libnode.zip
 RUN unzip libnode.zip
 
-FROM saschpe/android-ndk:37-jdk21.0.10_7-ndk30.0.14904198-cmake4.1.2
+FROM saschpe/android-ndk:37.0-jdk21.0.10_7-ndk30.0.14904198-cmake4.1.2
 
 COPY --from=worker ./nodejs-mobile* /opt/libnode
 ENV LIBNODE_PATH=/opt/libnode

@@ -205,7 +205,9 @@ function createSections () {
                   const episodes = matchingAiring?.media?.media?.airingSchedule?.nodes
                   const progress = (media?.mediaListEntry?.progress || media?.my_list_status?.num_episodes_watched || 0) - (matchingAiring?.media?.media?.zeroEpisode ? 1 : 0)
                   const sorted = episodes?.slice().sort((a, b) => a.episode - b.episode)
-                  const episodeNumber = (sorted?.findLast(episode => new Date(episode.airingAt) <= now) ?? sorted?.[0])?.episode ?? 0
+                  const closestDate = sorted?.findLast(episode => new Date(episode.airingAt) <= now)?.airingAt ?? sorted?.[0]?.airingAt
+                  const targetEpisode = sorted?.findLast(episode => episode.airingAt === closestDate)
+                  const episodeNumber = (targetEpisode?.episode ?? 0) - (new Date(targetEpisode?.airingAt) > now ? 1 : 0)
                   if ((progress === (episodeNumber + (media.episodes && (episodeNumber === media.episodes) ? 1 : 0))) && ((media?.status === 'RELEASING' || media?.status === 'currently_airing') || !(progress >= media?.num_episodes))) ids.push(media?.id)
                 }
               })

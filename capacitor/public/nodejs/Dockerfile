@@ -6,6 +6,8 @@ RUN unzip libnode.zip
 
 FROM saschpe/android-ndk:37.0-jdk21.0.10_7-ndk30.0.14904198-cmake4.1.2
 
+USER root
+
 COPY --from=worker ./nodejs-mobile* /opt/libnode
 ENV LIBNODE_PATH=/opt/libnode
 

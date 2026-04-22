@@ -266,9 +266,6 @@ class AnidbClient {
       status,
       episode: episode || 0
     }
-    if (score != null) {
-      body.score = score / 10 // AniList score is 0-1000 internally but displayed 0-10; AniDB vote is 100-1000
-    }
 
     const res = await this.handleRequest('/api/entry', {
       method: 'POST',
@@ -276,8 +273,8 @@ class AnidbClient {
       body: JSON.stringify(body)
     })
 
-    if (score != null && !res?.error) {
-      // Also submit vote
+    if (score != null && score > 0 && !res?.error) {
+      // Also submit vote (AniDB vote scale: 100-1000, UI scale: 1-10)
       try {
         await this.handleRequest('/api/vote', {
           method: 'POST',
@@ -285,7 +282,7 @@ class AnidbClient {
           body: JSON.stringify({
             token: this.userID.token,
             aid,
-            score: score / 10
+            score
           })
         })
       } catch (e) {

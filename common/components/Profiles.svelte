@@ -1,8 +1,9 @@
 <script context='module'>
   import { createListener, generateRandomString } from '@/modules/util.js'
   import { writable } from 'simple-store-svelte'
-  import { swapProfiles, alToken, malToken, profiles, sync } from '@/modules/settings.js'
+  import { swapProfiles, alToken, malToken, adbToken, profiles, sync } from '@/modules/settings.js'
   import { clientID } from '@/modules/myanimelist.js'
+  import { anidbClient } from '@/modules/anidb.js'
   import { click } from '@/modules/click.js'
   import { toast } from 'svelte-sonner'
   import SoftModal from '@/components/modals/SoftModal.svelte'
@@ -14,14 +15,18 @@
   const { reactive, init } = createListener(['pa-button', 'p-button', 'custom-switch', 'profile-safe-area'])
   init(true)
 
-  const currentProfile = writable(alToken || malToken)
+  const currentProfile = writable(alToken || malToken || adbToken)
 
   profiles.subscribe(() => {
-      currentProfile.set(alToken || malToken)
+      currentProfile.set(alToken || malToken || adbToken)
   })
 
   function isAniProfile(profile) {
     return profile.viewer?.data?.Viewer?.avatar
+  }
+
+  function isAdbProfile(profile) {
+    return profile.user && profile.pass
   }
 
   function currentLogout() {
@@ -55,6 +60,27 @@
     linkAccount(`https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${clientID}&state=${state}&code_challenge=${challenge}&code_challenge_method=plain`) // Change redirect_url to shiru://malauth
   }
 
+  let adbUsername = ''
+  let adbPassword = ''
+  let showAdbForm = false
+
+  async function confirmAniDB() {
+    if (!adbUsername || !adbPassword) {
+      toast.error('AniDB Login Failed', { description: 'Username and password are required.', duration: 10_000 })
+      return
+    }
+    try {
+      const auth = await anidbClient.auth(adbUsername, adbPassword)
+      if (!auth?.token) {
+        toast.error('AniDB Login Failed', { description: 'Invalid username or password.', duration: 10_000 })
+        return
+      }
+      await swapProfiles(auth, true)
+    } catch (e) {
+      toast.error('AniDB Login Failed', { description: e.message || 'Unknown error', duration: 10_000 })
+    }
+  }
+
   async function linkAccount(uri) {
     if (!uri) return
     COMMON.linkAccount(uri).then(tokenUri => {
@@ -84,7 +110,7 @@
   <div class='d-flex flex-column align-items-center'>
     {#if $currentProfile}
       <SmartImage class='h-150 rounded-circle' images={[$currentProfile.viewer.data.Viewer['avatar']?.large, $currentProfile.viewer.data.Viewer['avatar']?.medium, $currentProfile.viewer.data.Viewer['picture'], './404_square.png']} title='Current Profile'/>
-      <img class='h-3 auth-icon rounded-circle' src={isAniProfile($currentProfile) ? './anilist_icon.png' : './myanimelist_icon.png'} alt={isAniProfile($currentProfile) ? 'Logged in with AniList' : 'Logged in with MyAnimeList'} title={isAniProfile($currentProfile) ? 'Logged in with AniList' : 'Logged in with MyAnimeList'}>
+      <img class='h-3 auth-icon rounded-circle' src={isAniProfile($currentProfile) ? './anilist_icon.png' : isAdbProfile($currentProfile) ? './anidb_icon.jpg' : './myanimelist_icon.png'} alt={isAniProfile($currentProfile) ? 'Logged in with AniList' : isAdbProfile($currentProfile) ? 'Logged in with AniDB' : 'Logged in with MyAnimeList'} title={isAniProfile($currentProfile) ? 'Logged in with AniList' : isAdbProfile($currentProfile) ? 'Logged in with AniDB' : 'Logged in with MyAnimeList'}>
       <p class='font-size-18 font-weight-bold'>{$currentProfile.viewer.data.Viewer.name}</p>
     {/if}
   </div>
@@ -98,7 +124,7 @@
       <button type='button' class='profile-item {profile.reauth ? `authenticate` : ``} box text-left pointer border-0 d-flex align-items-center justify-content-between position-relative flex-wrap z-1' data-toggle='tooltip' data-placement='top' data-title='Switch to Profile: {profile.viewer.data.Viewer.name}' class:not-reactive={!$reactive} use:click={() => switchProfile(profile)}>
         <div class='d-flex align-items-center flex-wrap'>
           <SmartImage class='h-50 w-50 ml-10 mt-5 mb-5 mr-10 rounded-circle bg-transparent' images={[profile.viewer.data.Viewer.avatar?.large, profile.viewer.data.Viewer.avatar?.medium, profile.viewer.data.Viewer.picture, './404_square.png']}/>
-          <img class='ml-5 auth-icon rounded-circle' src={isAniProfile(profile) ? './anilist_icon.png' : './myanimelist_icon.png'} alt={isAniProfile(profile) ? 'Logged in with AniList' : 'Logged in with MyAnimeList'} title={isAniProfile(profile) ? 'Logged in with AniList' : 'Logged in with MyAnimeList'}>
+          <img class='ml-5 auth-icon rounded-circle' src={isAniProfile(profile) ? './anilist_icon.png' : isAdbProfile(profile) ? './anidb_icon.jpg' : './myanimelist_icon.png'} alt={isAniProfile(profile) ? 'Logged in with AniList' : isAdbProfile(profile) ? 'Logged in with AniDB' : 'Logged in with MyAnimeList'} title={isAniProfile(profile) ? 'Logged in with AniList' : isAdbProfile(profile) ? 'Logged in with AniDB' : 'Logged in with MyAnimeList'}>
           <p class='text-wrap'>{profile.viewer.data.Viewer.name}</p>
         </div>
         <div class='controls d-flex align-items-center flex-wrap ml-10'>
@@ -134,6 +160,22 @@
             <img class='mal-logo rounded pointer-events-none' src='./myanimelist_logo.png' alt='logo' />
           </button>
         </div>
+        {#if !showAdbForm}
+          <div class='mb-10 d-flex justify-content-center flex-row'>
+            <button class='btn anidb w-150 d-flex align-items-center justify-content-center' type='button' use:click={() => showAdbForm = true}>
+              <span class='adb-logo-text rounded pointer-events-none font-weight-bold'>AniDB</span>
+            </button>
+          </div>
+        {:else}
+          <div class='d-flex flex-column w-full px-20 mb-10'>
+            <input type='text' placeholder='AniDB Username' bind:value={adbUsername} class='form-control mb-5 bg-dark text-light border-0' />
+            <input type='password' placeholder='AniDB Password' bind:value={adbPassword} class='form-control mb-5 bg-dark text-light border-0' />
+            <div class='d-flex justify-content-center'>
+              <button class='btn anidb w-100 mr-5' type='button' use:click={confirmAniDB}>Log In</button>
+              <button class='btn btn-secondary w-100' type='button' use:click={() => showAdbForm = false}>Cancel</button>
+            </div>
+          </div>
+        {/if}
       </div>
     {:else if $profiles.length < 5}
       <button type='button' class='box pointer border-0 pt-10 pb-10 d-flex align-items-center justify-content-center text-center {$profiles.length > 0 && $currentProfile ? `` : !$currentProfile ? `rounded-bottom-30` : `rounded-top-30`}' use:click={() => { modal.open(modal.PROFILE, true) }}>
@@ -213,12 +255,19 @@
   .myanimelist {
     background-color: var(--myanimelist-color) !important;
   }
+  .anidb {
+    background-color: var(--anidb-color, #1a1a2e) !important;
+    color: #f0a500 !important;
+  }
   @media (hover: hover) and (pointer: fine) {
     .anilist:hover {
       background-color: var(--anilist-color-light) !important;
     }
     .myanimelist:hover {
       background-color: var(--myanimelist-color-light) !important;
+    }
+    .anidb:hover {
+      background-color: var(--anidb-color-light, #2a2a4e) !important;
     }
   }
 </style>

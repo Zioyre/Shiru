@@ -281,7 +281,7 @@ export default class Helper {
   static getPaginatedMediaList(page, perPage, variables, mediaList) {
     debug('Getting custom paged media list')
     return (variables.hideSubs ? malDubs.dubLists.value : Promise.resolve()).then(dubLists => {
-      const ids = this.isAniAuth() ? mediaList.filter(({ media }) => {
+      const ids = (this.isAniAuth() || this.isAdbAuth()) ? mediaList.filter(({ media }) => {
           if ((!variables.hideSubs || dubLists.dubbed.includes(media.idMal)) &&
             matchKeys(media, variables.search, ['title.userPreferred', 'title.english', 'title.romaji', 'title.native']) &&
             (!variables.genre || variables.genre.map(genre => genre.trim().toLowerCase()).every(genre => media.genres.map(genre => genre.trim().toLowerCase()).includes(genre))) &&
@@ -340,13 +340,13 @@ export default class Helper {
         debug(`Handling page media list with user specific sorting ${variables.sort}`)
         const updatedVariables = { ...variables }
         delete updatedVariables.sort // delete user sort as you can't sort by user specific sorting on AniList when logged into MyAnimeList.
-        if (!this.isAniAuth()) delete updatedVariables.format // MyAnimeList series format can be different from Anilist, we don't need to include this since we just filtered what is needed above.
+        if (!this.isAniAuth() && !this.isAdbAuth()) delete updatedVariables.format // MyAnimeList series format can be different from Anilist, we don't need to include this since we just filtered what is needed above.
         const startIndex = (perPage * (page - 1))
         const endIndex = startIndex + perPage
         const paginatedIds = ids.slice(startIndex, endIndex)
         const hasNextPage = ids.length > endIndex
         const idIndexMap = paginatedIds.reduce((map, id, index) => { map[id] = index; return map }, {})
-        return this.isAniAuth() ? {
+        return (this.isAniAuth() || this.isAdbAuth()) ? {
           data: {
             Page: {
               pageInfo: {
@@ -362,7 +362,7 @@ export default class Helper {
         })
       } else {
         debug(`Handling page media list with non-specific sorting ${variables.sort}`)
-        return anilistClient.searchIDS({ page, perPage, ...({[this.isAniAuth() ? 'id' : 'idMal']: ids}), ...this.sanitiseObject(variables) }).then(res => {
+        return anilistClient.searchIDS({ page, perPage, ...({[(this.isAniAuth() || this.isAdbAuth()) ? 'id' : 'idMal']: ids}), ...this.sanitiseObject(variables) }).then(res => {
           return res
         })
       }

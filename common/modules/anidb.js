@@ -39,7 +39,9 @@ class AnidbClient {
   /** @type {import('simple-store-svelte').Writable<ReturnType<AnidbClient['getUserLists']>>} */
   userLists = writable()
 
-  userID = adbToken
+  get userID () {
+    return adbToken
+  }
 
   constructor () {
     debug('Initializing AniDB Client for ' + this.userID?.viewer?.data?.Viewer?.name)

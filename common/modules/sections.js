@@ -58,11 +58,11 @@ export default class SectionsManager {
             if (!_res?.data && _res?.errors) throw _res.errors[0]
             let animeFilter = {}
             const hasHideSubs = Object.keys(hideSubs)?.length > 0
-            const targetLists = Helper.isAniAuth() ? _res.data.MediaListCollection.lists : _res.data.MediaList
+            const targetLists = (Helper.isAniAuth() || Helper.isAdbAuth()) ? _res.data.MediaListCollection.lists : _res.data.MediaList
             const statusFilter = search.hideMyAnime ? search.hideStatus : search.showStatus
-            const userAnimeIds = Array.from(new Set(Helper.isAniAuth() ? targetLists.filter(({ status }) => statusFilter.includes(status)).flatMap(list => list.entries.map(({ media }) => hasHideSubs ? media.idMal : media.id)) : targetLists.filter(({ node }) => statusFilter.includes(Helper.statusMap(node.my_list_status.status))).map(({ node }) => node.id))).filter(Boolean)
+            const userAnimeIds = Array.from(new Set((Helper.isAniAuth() || Helper.isAdbAuth()) ? targetLists.filter(({ status }) => statusFilter.includes(status)).flatMap(list => list.entries.map(({ media }) => hasHideSubs ? media.idMal : media.id)) : targetLists.filter(({ node }) => statusFilter.includes(Helper.statusMap(node.my_list_status.status))).map(({ node }) => node.id))).filter(Boolean)
             // anilist queries do not support mix and match, you have to use the same id includes as excludes, id_not_in cannot be used with idMal_in.
-            if (search.hideMyAnime) animeFilter = userAnimeIds?.length ? (Helper.isAniAuth() ? { [hasHideSubs ? 'idMal_not' : 'id_not']: userAnimeIds.filter(Boolean) } : { idMal_not: userAnimeIds }) : {}
+            if (search.hideMyAnime) animeFilter = userAnimeIds?.length ? ((Helper.isAniAuth() || Helper.isAdbAuth()) ? { [hasHideSubs ? 'idMal_not' : 'id_not']: userAnimeIds.filter(Boolean) } : { idMal_not: userAnimeIds }) : {}
             else if (search.showMyAnime) animeFilter = userAnimeIds?.length ? { id: userAnimeIds.filter(Boolean) } : {}
             return anilistClient.search({ page, perPage, ...hideSubs, ...animeFilter, ...SectionsManager.sanitiseObject(search) })
           })
@@ -160,7 +160,7 @@ function createSections () {
     // user specific sections
     createSection({ title: 'Sequels You Missed', sort: 'POPULARITY_DESC', format: [], hide: !Helper.isAuthorized() || Helper.isMalAuth(),
       load: (page = 1, perPage = 50, variables = {}) => {
-        if (Helper.isMalAuth()) return {} // not going to bother handling this, see below.
+        if (Helper.isMalAuth() || Helper.isAdbAuth()) return {} // disabled for MAL (no relations) and AniDB (relations exist but this is expensive)
         const res = Helper.userLists(variables).then(res => {
           if (!res?.data && res?.errors) throw res.errors[0]
           const mediaList = res.data.MediaListCollection.lists.find(({ status }) => status === 'COMPLETED')?.entries
@@ -175,7 +175,7 @@ function createSections () {
     }, { userList: true, missedList: true, disableHide: true }),
     createSection({ title: 'Stories You Missed', sort: 'POPULARITY_DESC', format: [], hide: !Helper.isAuthorized() || Helper.isMalAuth(),
       load: (page = 1, perPage = 50, variables = {}) => {
-        if (Helper.isMalAuth()) return {} // same as Sequels You Missed
+        if (Helper.isMalAuth() || Helper.isAdbAuth()) return {} // same as Sequels You Missed
         const res = Helper.userLists(variables).then(res => {
           if (!res?.data && res?.errors) throw res.errors[0]
           const mediaList = res.data.MediaListCollection.lists.find(({ status }) => status === 'COMPLETED')?.entries
@@ -192,7 +192,7 @@ function createSections () {
       load: (page = 1, perPage = 50, variables = {}) => {
         const res = Helper.userLists(variables).then(res => {
           if (!res?.data && res?.errors) throw res.errors[0]
-          let mediaList = Helper.isAniAuth() ? res.data.MediaListCollection.lists.reduce((filtered, { status, entries }) => (status === 'CURRENT' || status === 'REPEATING') ? filtered.concat(entries) : filtered, []) : res.data.MediaList.filter(({ node }) => (node.my_list_status.status === Helper.statusMap('CURRENT') || node.my_list_status.is_rewatching))
+          let mediaList = (Helper.isAniAuth() || Helper.isAdbAuth()) ? res.data.MediaListCollection.lists.reduce((filtered, { status, entries }) => (status === 'CURRENT' || status === 'REPEATING') ? filtered.concat(entries) : filtered, []) : res.data.MediaList.filter(({ node }) => (node.my_list_status.status === Helper.statusMap('CURRENT') || node.my_list_status.is_rewatching))
           if (!mediaList) return {}
           return animeSchedule.dubAiringLists.value.then(airing => {
             if (settings.value.preferDubs) {
@@ -241,7 +241,7 @@ function createSections () {
       load: (page = 1, perPage = 50, variables = {}) => {
         const res = Helper.userLists(variables).then(res => {
           if (!res?.data && res?.errors) throw res.errors[0]
-          const mediaList = Helper.isAniAuth()
+          const mediaList = (Helper.isAniAuth() || Helper.isAdbAuth())
             ? res.data.MediaListCollection.lists.find(({ status }) => status === 'CURRENT')?.entries
             : res.data.MediaList.filter(({ node }) => node.my_list_status.status === Helper.statusMap('CURRENT'))
           if (!mediaList) return {}
@@ -254,7 +254,7 @@ function createSections () {
       load: (page = 1, perPage = 50, variables = {}) => {
         const res = Helper.userLists(variables).then(res => {
           if (!res?.data && res?.errors) throw res.errors[0]
-          const mediaList = Helper.isAniAuth()
+          const mediaList = (Helper.isAniAuth() || Helper.isAdbAuth())
             ? res.data.MediaListCollection.lists.find(({ status }) => status === 'REPEATING')?.entries
             : res.data.MediaList.filter(({ node }) => node.my_list_status.status === Helper.statusMap('REPEATING'))
           if (!mediaList) return {}
@@ -267,7 +267,7 @@ function createSections () {
       load: (page = 1, perPage = 50, variables = {}) => {
         const res = Helper.userLists(variables).then(res => {
           if (!res?.data && res?.errors) throw res.errors[0]
-          const mediaList = Helper.isAniAuth()
+          const mediaList = (Helper.isAniAuth() || Helper.isAdbAuth())
             ? res.data.MediaListCollection.lists.find(({ status }) => status === 'COMPLETED')?.entries
             : res.data.MediaList.filter(({ node }) => node.my_list_status.status === Helper.statusMap('COMPLETED'))
           if (!mediaList) return {}
@@ -280,7 +280,7 @@ function createSections () {
       load: (page = 1, perPage = 50, variables = {}) => {
         const res = Helper.userLists(variables).then(res => {
           if (!res?.data && res?.errors) throw res.errors[0]
-          const mediaList = Helper.isAniAuth()
+          const mediaList = (Helper.isAniAuth() || Helper.isAdbAuth())
             ? res.data.MediaListCollection.lists.find(({ status }) => status === 'PLANNING')?.entries
             : res.data.MediaList.filter(({ node }) => node.my_list_status.status === Helper.statusMap('PLANNING'))
           if (!mediaList) return {}
@@ -293,7 +293,7 @@ function createSections () {
       load: (page = 1, perPage = 50, variables = {}) => {
         const res = Helper.userLists(variables).then(res => {
           if (!res?.data && res?.errors) throw res.errors[0]
-          const mediaList = Helper.isAniAuth()
+          const mediaList = (Helper.isAniAuth() || Helper.isAdbAuth())
             ? res.data.MediaListCollection.lists.find(({ status }) => status === 'PAUSED')?.entries
             : res.data.MediaList.filter(({ node }) => node.my_list_status.status === Helper.statusMap('PAUSED'))
           if (!mediaList) return {}
@@ -306,7 +306,7 @@ function createSections () {
       load: (page = 1, perPage = 50, variables = {}) => {
         const res = Helper.userLists(variables).then(res => {
           if (!res?.data && res?.errors) throw res.errors[0]
-          const mediaList = Helper.isAniAuth()
+          const mediaList = (Helper.isAniAuth() || Helper.isAdbAuth())
             ? res.data.MediaListCollection.lists.find(({ status }) => status === 'DROPPED')?.entries
             : res.data.MediaList.filter(({ node }) => node.my_list_status.status === Helper.statusMap('DROPPED'))
           if (!mediaList) return {}

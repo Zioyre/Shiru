@@ -1,6 +1,7 @@
-import { alToken, malToken, settings, sync, isAuthorized } from '@/modules/settings.js'
+import { alToken, malToken, adbToken, settings, sync, isAuthorized } from '@/modules/settings.js'
 import { anilistClient } from '@/modules/anilist.js'
 import { malClient } from '@/modules/myanimelist.js'
+import { anidbClient } from '@/modules/anidb.js'
 import { malDubs } from '@/modules/anime/animedubs.js'
 import { profiles } from '@/modules/settings.js'
 import { cache, mediaCache, mapStatus } from '@/modules/cache.js'
@@ -83,16 +84,23 @@ export default class Helper {
     return malToken
   }
 
+  static isAdbAuth() {
+    return adbToken
+  }
+
   static isAuthorized() {
     return isAuthorized()
   }
 
   static getClient() {
-    return this.isAniAuth() ? anilistClient : malClient
+    if (this.isAniAuth()) return anilistClient
+    if (this.isMalAuth()) return malClient
+    if (this.isAdbAuth()) return anidbClient
+    return anilistClient
   }
 
   static getUser() {
-    return (alToken || malToken)?.viewer?.data?.Viewer
+    return (alToken || malToken || adbToken)?.viewer?.data?.Viewer
   }
 
   static getUserAvatar() {
@@ -104,6 +112,7 @@ export default class Helper {
   }
 
   static userLists(variables) {
+    if (this.isAdbAuth()) return anidbClient.userLists.value
     return (!this.isUserSort(variables) || variables.sort === 'UPDATED_TIME_DESC')
         ? this.getClient().userLists.value
         : this.getClient().getUserLists({sort: (this.isAniAuth() ? variables.sort : this.sortMap(variables.sort))})
@@ -208,6 +217,10 @@ export default class Helper {
           res = await anilistClient.entry(variables)
         } else if (this.isMalAuth()) {
           res = await malClient.malEntry(cachedMedia, variables)
+        } else if (this.isAdbAuth()) {
+          // AniDB requires AID, not AniList ID. Need reverse mapping.
+          // For now, attempt with id and let anidbClient handle mapping if possible.
+          res = await anidbClient.entry(variables)
         }
         if (res?.data?.mediaListEntry || res?.data?.SaveMediaListEntry) {
           window.dispatchEvent(new CustomEvent('notification-read', {
@@ -243,7 +256,8 @@ export default class Helper {
   }
 
   static listToast(res, description, profile)  {
-    const who = (profile ? ' for ' + profile.viewer.data.Viewer.name + (profile.viewer?.data?.Viewer?.avatar ? ' (AniList)' : ' (MyAnimeList)')  : '')
+    const serviceName = profile ? (profile.viewer?.data?.Viewer?.avatar ? ' (AniList)' : profile.user ? ' (AniDB)' : ' (MyAnimeList)') : ''
+    const who = (profile ? ' for ' + profile.viewer.data.Viewer.name + serviceName : '')
     if (res?.data?.mediaListEntry || res?.data?.SaveMediaListEntry) {
       debug(`List Updated ${who}: ${description.replace(/\n/g, ', ')}`)
       if (!profile && (settings.value.toasts.includes('All') || settings.value.toasts.includes('Successes'))) {

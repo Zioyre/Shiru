@@ -10,6 +10,8 @@ const debug = Debug('ui:settings')
 export let alToken = JSON.parse(localStorage.getItem('ALviewer')) || null
 /** @type {{viewer: import('./mal').Query<{Viewer: import('./mal').Viewer}>, token: string, refresh: string, refresh_in: number, reauth: boolean} | null} */
 export let malToken = JSON.parse(localStorage.getItem('MALviewer')) || null
+/** @type {{viewer: import('./adb').Query<{Viewer: import('./adb').Viewer}>, token: string, user: string, pass: string} | null} */
+export let adbToken = JSON.parse(localStorage.getItem('ADBviewer')) || null
 
 /**
  * Ensures that the webtorrent service is reloaded when the app is reloaded.
@@ -66,7 +68,7 @@ profiles.subscribe(value => {
 })
 
 export function isAuthorized() {
-  return alToken || malToken
+  return alToken || malToken || adbToken
 }
 
 window.addEventListener('paste', ({ clipboardData }) => {
@@ -221,7 +223,7 @@ export async function swapProfiles(profile, newProfile) {
     })
   } else if (profile != null) {
     if (profile?.viewer?.data?.Viewer?.id === currentProfile?.viewer?.data?.Viewer?.id && newProfile) {
-      localStorage.setItem(alToken ? 'ALviewer' : 'MALviewer', JSON.stringify(profile))
+      localStorage.setItem(alToken ? 'ALviewer' : malToken ? 'MALviewer' : 'ADBviewer', JSON.stringify(profile))
     } else if (profiles.value.some(p => p.viewer?.data?.Viewer?.id === profile?.viewer?.data?.Viewer?.id && newProfile)) {
       profiles.update(profiles => profiles.map(p => p.viewer?.data?.Viewer?.id === profile?.viewer?.data?.Viewer?.id ? profile : p))
     } else {
@@ -231,21 +233,28 @@ export async function swapProfiles(profile, newProfile) {
     }
   } else {
     await cache.abandon('default')
-    localStorage.removeItem(alToken ? 'ALviewer' : 'MALviewer')
+    localStorage.removeItem(alToken ? 'ALviewer' : malToken ? 'MALviewer' : 'ADBviewer')
     alToken = null
     malToken = null
+    adbToken = null
   }
   location.reload()
 }
 
 function setViewer (profile) {
-  localStorage.removeItem(alToken ? 'ALviewer' : 'MALviewer')
+  localStorage.removeItem(alToken ? 'ALviewer' : malToken ? 'MALviewer' : 'ADBviewer')
   if (profile?.viewer?.data?.Viewer?.avatar) {
     alToken = profile
+    malToken = null
+    adbToken = null
+  } else if (profile?.user && profile?.pass) {
+    adbToken = profile
+    alToken = null
     malToken = null
   } else {
     malToken = profile
     alToken = null
+    adbToken = null
   }
-  localStorage.setItem(profile.viewer?.data?.Viewer?.avatar ? 'ALviewer' : 'MALviewer', JSON.stringify(profile))
+  localStorage.setItem(alToken ? 'ALviewer' : malToken ? 'MALviewer' : 'ADBviewer', JSON.stringify(profile))
 }

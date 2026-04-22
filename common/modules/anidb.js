@@ -195,6 +195,7 @@ class AnidbClient {
           if (anilistId) {
             aidToAnilistId.set(aid, anilistId)
             cache.cacheEntry(caches.MAPPINGS, `adb-${aid}`, {}, { anilist_id: anilistId }, Date.now() + 30 * 24 * 60 * 60 * 1_000)
+            cache.cacheEntry(caches.MAPPINGS, `adb-ani-${anilistId}`, {}, { aid }, Date.now() + 30 * 24 * 60 * 60 * 1_000)
           }
         } catch (e) {
           debug(`Failed to fetch mapping for AID ${aid}:`, e.message)
@@ -249,11 +250,19 @@ class AnidbClient {
 
   /** @param {Record<string, any>} variables */
   async entry (variables) {
-    debug(`Updating entry for AID ${variables.id}`)
+    debug(`Updating entry for media ${variables.id}`)
+    // Reverse-map AniList ID -> AID
+    const cachedMapping = cache.cachedEntry(caches.MAPPINGS, `adb-ani-${variables.id}`)
+    let aid = cachedMapping?.aid
+    if (!aid) {
+      debug(`No cached AID for AniList ID ${variables.id}, cannot update entry`)
+      throw new Error('No AniDB mapping found for this anime')
+    }
+
     const { status, episode, score } = variables
     const body = {
       token: this.userID.token,
-      aid: variables.id,
+      aid,
       status,
       episode: episode || 0
     }
@@ -275,7 +284,7 @@ class AnidbClient {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             token: this.userID.token,
-            aid: variables.id,
+            aid,
             score: score / 10
           })
         })
@@ -289,13 +298,20 @@ class AnidbClient {
 
   /** @param {Record<string, any>} variables */
   async delete (variables) {
-    debug(`Deleting entry for AID ${variables.id}`)
+    debug(`Deleting entry for media ${variables.id}`)
+    // Reverse-map AniList ID -> AID
+    const cachedMapping = cache.cachedEntry(caches.MAPPINGS, `adb-ani-${variables.id}`)
+    let aid = cachedMapping?.aid
+    if (!aid) {
+      debug(`No cached AID for AniList ID ${variables.id}, cannot delete entry`)
+      throw new Error('No AniDB mapping found for this anime')
+    }
     const res = await this.handleRequest('/api/entry', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         token: this.userID.token,
-        aid: variables.id
+        aid
       })
     })
     return res

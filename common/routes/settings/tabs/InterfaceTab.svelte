@@ -68,7 +68,7 @@
     </div>
   </SettingCard>
 {/if}
-{#if !Helper.isAniAuth()}
+{#if !Helper.isAniAuth() && !Helper.isAdbAuth()}
   <SettingCard title='Preferred Title Language' description='What title language to automatically select when displaying the title of an anime.'>
     <select class='form-control bg-dark mw-150 w-150' bind:value={settings.titleLang}>
       <option value='romaji' selected>Japanese</option>

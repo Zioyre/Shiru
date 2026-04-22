@@ -168,11 +168,11 @@ class AnimeSchedule {
                     const isFollowing = () => {
                         if (!res?.data && res?.errors) throw res.errors[0]
                         if (!Helper.isAuthorized()) return false
-                        const mediaList = Helper.isAniAuth()
+                        const mediaList = (Helper.isAniAuth() || Helper.isAdbAuth())
                             ? res.data.MediaListCollection.lists.find(({ status }) => status === 'CURRENT' || status === 'REPEATING' || status === 'COMPLETED' || status === 'PAUSED' || status === 'PLANNING')?.entries
                             : res.data.MediaList.filter(({ node }) => node.my_list_status.status === Helper.statusMap('CURRENT') || node.my_list_status.is_rewatching || node.my_list_status.status === Helper.statusMap('COMPLETED') || node.my_list_status.status === Helper.statusMap('PAUSED') || node.my_list_status.status === Helper.statusMap('PLANNING'))
                         if (!mediaList) return false
-                        return (cachedMedia?.relations?.edges?.map(edge => edge.node.id) || []).some(id => (Helper.isAniAuth() ? mediaList.map(({ media }) => media.id) : mediaList.map(({ node }) => node.id)).includes(id))
+                        return (cachedMedia?.relations?.edges?.map(edge => edge.node.id) || []).some(id => ((Helper.isAniAuth() || Helper.isAdbAuth()) ? mediaList.map(({ media }) => media.id) : mediaList.map(({ node }) => node.id)).includes(id))
                     }
                     const notify = (cache.getEntry(caches.NOTIFICATIONS, `last${type}`) > 0) && (settings.value[key] === 'all' || isFollowing())
                     if (notify && media.format !== 'MUSIC') {

@@ -131,7 +131,7 @@
   }
 
   function clearTags() { // cannot specify genre and tag filtering with user specific sorting options when using alternative authentication.
-    if (!Helper.isAniAuth() && Helper.isUserSort(search)) {
+    if (!Helper.isAniAuth() && !Helper.isAdbAuth() && Helper.isUserSort(search)) {
       search.genre = []
       search.genre_not = []
       search.tag = []
@@ -197,8 +197,8 @@
         <Hash class='mr-10 block-scale-30'/>
         <div>Genres</div>
       </div>
-      <div class='input-group' title={(!Helper.isAniAuth() && Helper.isUserSort(search)) ? 'Cannot use with sort: ' + sortOptions[search.sort] : ''}>
-        <CustomDropdown id={`tags-input`} bind:form headers={searchTags.headers} options={[...toArray(genreList), ...toArray(tagList)]} bind:value={searchTags.tags} bind:altValue={searchTags.tags_not} constrainAlt={false} disabled={search.disableSearch || (!Helper.isAniAuth() && Helper.isUserSort(search))}/>
+      <div class='input-group' title={(!Helper.isAniAuth() && !Helper.isAdbAuth() && Helper.isUserSort(search)) ? 'Cannot use with sort: ' + sortOptions[search.sort] : ''}>
+        <CustomDropdown id={`tags-input`} bind:form headers={searchTags.headers} options={[...toArray(genreList), ...toArray(tagList)]} bind:value={searchTags.tags} bind:altValue={searchTags.tags_not} constrainAlt={false} disabled={search.disableSearch || (!Helper.isAniAuth() && !Helper.isAdbAuth() && Helper.isUserSort(search))}/>
       </div>
     </div>
     <div class='col-lg col-4 p-10 z-4 d-none {advancedSearch} flex-column justify-content-end' class:d-flex={!search.scheduleList}>

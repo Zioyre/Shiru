@@ -62,14 +62,30 @@
     episode = 0
     status = 'NOT IN LIST'
     if (media.mediaListEntry) {
-      const res = await Helper.delete(media, Helper.isAniAuth() ? {id: media.mediaListEntry.id, idAni: media.id} : {idMal: media.idMal})
+      let deleteVars
+      if (Helper.isAniAuth()) {
+        deleteVars = {id: media.mediaListEntry.id, idAni: media.id}
+      } else if (Helper.isAdbAuth()) {
+        deleteVars = {id: media.id} // AniDB client will attempt mapping
+      } else {
+        deleteVars = {idMal: media.idMal}
+      }
+      const res = await Helper.delete(media, deleteVars)
       const description = `${anilistClient.title(media)} has been deleted from your list.`
       printToast(res, description, false, false)
       if (sync.value.length > 0) { // handle profile syncing
         for (const profile of profiles.value) {
           if (sync.value.includes(profile?.viewer?.data?.Viewer?.id)) {
             const anilist = profile.viewer?.data?.Viewer?.avatar
-            const listId = (anilist ? { id: (await anilistClient.getUserLists({userID: profile.viewer.data.Viewer.id, token: profile.token}))?.data?.MediaListCollection?.lists?.flatMap(list => list.entries).find(({ media: listMedia }) => listMedia.id === media.id)?.media?.mediaListEntry?.id } : { idMal: media.idMal })
+            const adb = profile.user && profile.pass
+            let listId
+            if (anilist) {
+              listId = { id: (await anilistClient.getUserLists({userID: profile.viewer.data.Viewer.id, token: profile.token}))?.data?.MediaListCollection?.lists?.flatMap(list => list.entries).find(({ media: listMedia }) => listMedia.id === media.id)?.media?.mediaListEntry?.id }
+            } else if (adb) {
+              listId = {id: media.id}
+            } else {
+              listId = { idMal: media.idMal }
+            }
             if (listId?.id || listId?.idMal) {
               const res = await Helper.delete(media, {...listId, token: profile.token, refresh_in: profile.refresh_in, anilist})
               printToast(res, description, false, profile)
@@ -88,7 +104,7 @@
               idMal: media.idMal,
               status,
               episode,
-              score: Helper.isAniAuth() ? (score * 10) : score, // AniList score scale is out of 100, others use a scale of 10.
+              score: Helper.isAniAuth() ? (score * 10) : score, // AniList score scale is out of 100, others (MAL/AniDB) use a scale of 10.
               repeat: media.mediaListEntry?.repeat || 0,
               lists: media.mediaListEntry?.customLists?.filter(list => list.enabled).map(list => list.name) || [],
               ...fuzzyDate
@@ -101,6 +117,7 @@
           for (const profile of profiles.value) {
             if (sync.value.includes(profile?.viewer?.data?.Viewer?.id)) {
               const anilist = profile.viewer?.data?.Viewer?.avatar
+              const adb = profile.user && profile.pass
               const lists = anilist ? (await anilistClient.getUserLists({userID: profile.viewer.data.Viewer.id, token: profile.token}))?.data?.MediaListCollection?.lists?.flatMap(list => list.entries).find(({ media: listMedia }) => listMedia.id === media.id)?.media?.mediaListEntry?.customLists?.filter(list => list.enabled).map(list => list.name) : []
               const res = await Helper.entry(media, {
                 ...variables,
@@ -126,7 +143,8 @@
   }
 
   function printToast(res, description, save, profile) {
-    const who = (profile ? ' for ' + profile.viewer.data.Viewer.name + (profile.viewer?.data?.Viewer?.avatar ? ' (AniList)' : ' (MyAnimeList)')  : '')
+    const serviceName = profile ? (profile.viewer?.data?.Viewer?.avatar ? ' (AniList)' : profile.user ? ' (AniDB)' : ' (MyAnimeList)') : ''
+    const who = (profile ? ' for ' + profile.viewer.data.Viewer.name + serviceName : '')
     if ((save && res?.data?.SaveMediaListEntry) || (!save && res)) {
       debug(`List Updated${who}: ${description.replace(/\n/g, ', ')}`)
       if (!profile) {

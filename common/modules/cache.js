@@ -371,7 +371,7 @@ export let mediaCache
 
 class Cache {
   /** @type {string} */
-  cacheID = (JSON.parse(localStorage.getItem('ALviewer')) || JSON.parse(localStorage.getItem('MALviewer')))?.viewer?.data?.Viewer?.id || 'default'
+  cacheID = (JSON.parse(localStorage.getItem('ALviewer')) || JSON.parse(localStorage.getItem('MALviewer')) || JSON.parse(localStorage.getItem('ADBviewer')))?.viewer?.data?.Viewer?.id || 'default'
   /** @type {import('svelte/store').Writable<GeneralDefaults>} */
   general
   /** @type {import('svelte/store').Writable<QueryDefaults>} */

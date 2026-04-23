@@ -6,16 +6,17 @@
     "build:native": "cd public/nodejs/ && npm install && docker build -t android-build:latest . && docker run -v ${PWD}:/app/ android-build:latest /bin/bash /app/setup-deps.sh",
     "build:native-win": "cd public\\nodejs && for %I in (.) do docker run -v %~fI:/app/ -it android-build:latest /bin/bash /app/setup-deps-win.sh",
     "build:app": "cross-env NODE_ENV=production run-s build:web build:native",
-    "build:web": "webpack build",
+    "build:web": "cross-env NODE_ENV=production webpack build",
     "build:assets": "capacitor-assets generate --iconBackgroundColor #EBEBEB --iconBackgroundColorDark #EBEBEB --splashBackgroundColor #EBEBEB --splashBackgroundColorDark #EBEBEB --android",
     "dev:adb-port": "adb reverse tcp:5001 tcp:5001",
-    "dev:ios": "run-p dev:start cap-run:ios",
-    "dev:android": "cap run android",
+    "dev:ios": "cross-env NODE_ENV=development run-p dev:start cap-run:ios",
+    "dev:android": "cross-env NODE_ENV=development cap run android",
+    "run:android:prod": "cross-env NODE_ENV=production cap run android",
     "dev:android-port": "run-s dev:android dev:adb-port",
     "dev:preview": "vite preview",
     "dev:start": "run-p dev:webpack dev:android-port",
     "dev:webpack": "webpack serve",
-    "test:e2e": "cross-env NODE_ENV=production run-s build:web dev:android"
+    "test:e2e": "cross-env NODE_ENV=production run-s build:web run:android:prod"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

@@ -1,4 +1,4 @@
-const mode = process.env.NODE_ENV?.trim() || 'development'
+const mode = process.env.NODE_ENV?.trim() || 'production'
 const isDev = mode === 'development'
 
 const config = {

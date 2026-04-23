@@ -790,6 +790,17 @@ class Cache {
 export let cache = new Cache()
 
 /**
+ * Flushes any pending batched IndexedDB cache writes for the current cache/user.
+ * Useful before app backgrounding or immediately after critical settings changes.
+ *
+ * @returns {Promise<void>}
+ */
+export async function flushPendingCacheWrites() {
+  await cache.isReady
+  await getBatchWriter(cache.cacheID).flushNow()
+}
+
+/**
  * Ensures that the cache system has finished initializing before use.
  * THIS MUST BE CALLED BEFORE ACCESSING {@link cache}.
  *

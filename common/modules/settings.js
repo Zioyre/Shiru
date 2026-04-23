@@ -1,6 +1,6 @@
-import { cache, caches } from '@/modules/cache.js'
+import { cache, caches, flushPendingCacheWrites } from '@/modules/cache.js'
 import { writable } from 'simple-store-svelte'
-import { defaults } from '@/modules/util.js'
+import { defaults, debounce } from '@/modules/util.js'
 import { toast } from 'svelte-sonner'
 import { ELECTRON, IPC } from '@/modules/bridge.js'
 import Debug from 'debug'
@@ -18,13 +18,24 @@ export let adbToken = JSON.parse(localStorage.getItem('ADBviewer')) || null
  * This is triggered by a `location.reload()` or force reload event.
  */
 const _onbeforeunload = window.onbeforeunload
+const flushCriticalCacheWrites = debounce(() => {
+  flushPendingCacheWrites().catch(error => debug('Failed flushing pending cache writes:', error))
+}, 500)
+
+function flushCacheOnBackground () {
+  if (document.visibilityState === 'hidden') flushPendingCacheWrites().catch(error => debug('Failed flushing cache on background:', error))
+}
+
 window.onbeforeunload = function (event) {
   IPC.emit('webtorrent-reload')
+  flushPendingCacheWrites().catch(error => debug('Failed flushing cache on unload:', error))
   if (typeof _onbeforeunload === 'function') {
     const result = _onbeforeunload(event)
     if (typeof result === 'string') return result
   }
 }
+window.addEventListener('pagehide', () => flushPendingCacheWrites().catch(error => debug('Failed flushing cache on pagehide:', error)))
+document.addEventListener('visibilitychange', flushCacheOnBackground)
 
 let storedSettings = cache.getEntry(caches.GENERAL, 'settings')
 let scopedDefaults
@@ -52,6 +63,7 @@ export const settings = writable({ ...defaults, ...scopedDefaults, ...storedSett
 
 settings.subscribe(value => {
   cache.setEntry(caches.GENERAL, 'settings', value)
+  flushCriticalCacheWrites()
 })
 
 function resetSettings () {

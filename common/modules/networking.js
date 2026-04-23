@@ -6,12 +6,20 @@ import Debug from 'debug'
 const debug = Debug('ui:networking')
 
 export const status = writable(navigator.onLine ? 'online' : 'offline')
+
+function formatErrorDetails(error) {
+  const status = Number.isFinite(error?.status) ? error.status : null
+  const message = error?.message || error?.statusText || (status ? codes[status] : 'Request failed')
+  return status ? `${status} - ${message}` : message
+}
+
 export async function printError(title, description, error) {
   if (await isOffline(error) || await isAnilistDown(error)) return
-  debug(`Error: ${error.status || 429} - ${error.message || codes[error.status || 429]}`)
+  const errorDetails = formatErrorDetails(error)
+  debug(`Error: ${errorDetails}`)
   if (settings.value.toasts.includes('All') || settings.value.toasts.includes('Errors')) {
     toast.error(title, {
-      description: `${description}\n${error.status || 429} - ${error.message || codes[error.status || 429]}`,
+      description: `${description}\n${errorDetails}`,
       duration: 10_000
     })
   }
@@ -125,7 +133,7 @@ function newOutageChecker({ key, ping, detect, offlineEvent, onlineEvent, retryR
           window.dispatchEvent(new CustomEvent(offlineEvent))
           if (outageToast) {
             toast.error(outageToast.title, {
-              description: `${outageToast.description ? outageToast.description + '\n' : ''}${error.status || 429} - ${error.message || codes[error.status || 429]}`,
+              description: `${outageToast.description ? outageToast.description + '\n' : ''}${formatErrorDetails(error)}`,
               duration: outageToast.duration ?? 45_000
             })
           }

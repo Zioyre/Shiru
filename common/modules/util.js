@@ -643,6 +643,7 @@ export const defaults = {
   playerTitleTop: true,
   playerChapterSkip: 'embedded',
   configTrackers: false,
+  adbProxyURL: 'http://localhost:8459',
   trackers: [
     atob('d3NzOi8vdHJhY2tlci5vcGVud2VidG9ycmVudC5jb20='),
     atob('d3NzOi8vdHJhY2tlci53ZWJ0b3JyZW50LmRldg=='),

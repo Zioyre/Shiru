@@ -8,13 +8,13 @@ import { cache, caches, mediaCache } from '@/modules/cache.js'
 import Debug from 'debug'
 const debug = Debug('ui:anidb')
 
-const PROXY_BASE_URL = (() => {
+function getProxyBaseUrl () {
   try {
     return settings.value?.adbProxyURL || 'http://localhost:8459'
   } catch {
     return 'http://localhost:8459'
   }
-})()
+}
 
 const ANIDB_STATUS_MAP = {
   CURRENT: 'CURRENT',
@@ -87,7 +87,7 @@ class AnidbClient {
     this.numberOfQueries++
     if (status.value.match(/offline/i)) throw new Error('AniDB proxy is temporarily disabled or network is offline')
 
-    const url = `${PROXY_BASE_URL}${path}`
+    const url = `${getProxyBaseUrl()}${path}`
     let res = {}
     try {
       res = await fetch(url, opts)

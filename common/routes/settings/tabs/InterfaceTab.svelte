@@ -149,6 +149,10 @@
     </select>
   </SettingCard>
 {/if}
+<h4 class='mb-10 font-weight-bold'>AniDB Settings</h4>
+<SettingCard title='AniDB Proxy URL' description='The address of the AniDB HTTP-to-UDP proxy. Default is http://localhost:8459. Change this if your proxy is running on a different machine or port.'>
+  <input type='text' class='form-control w-md-500 w-full bg-dark' placeholder='http://localhost:8459' bind:value={settings.adbProxyURL} />
+</SettingCard>
 {#each ['Sub', 'Dub', 'Hentai'] as type}
   {#if type !== 'Hentai' || settings.adult === 'hentai'}
     <SettingCard title='{type} Announcements' description={`Get ${type} announcement notifications when an airing date is confirmed. Choose to get all announcements, updates on sequels for related anime you're following, or turn off notifications entirely.`}>
